@@ -189,15 +189,15 @@ public class DeprioLeavePlugin extends Plugin
 		// Only apply to:
 		//  - objects (doors)
 		//  - widgets (inventory / equipment / spells)
-		MenuAction t = e.getType();
-		boolean eligible = t == MenuAction.CC_OP || t == MenuAction.CC_OP_LOW_PRIORITY ||
-						(t.getId() >= MenuAction.GAME_OBJECT_FIRST_OPTION.getId()
-								&& t.getId() <= MenuAction.GAME_OBJECT_FIFTH_OPTION.getId());
+		MenuAction menuAction = e.getType();
+		boolean eligible = menuAction == MenuAction.CC_OP || menuAction == MenuAction.CC_OP_LOW_PRIORITY ||
+						(menuAction.getId() >= MenuAction.GAME_OBJECT_FIRST_OPTION.getId()
+								&& menuAction.getId() <= MenuAction.GAME_OBJECT_FIFTH_OPTION.getId());
 
 		if (!eligible)
 			return false;
 
-		if (t == MenuAction.CC_OP || t == MenuAction.CC_OP_LOW_PRIORITY) {
+		if (menuAction == MenuAction.CC_OP || menuAction == MenuAction.CC_OP_LOW_PRIORITY) {
 			for (Pattern p : deprioItemPatterns)
 				if (p.matcher(opt).matches())
 					return true;
