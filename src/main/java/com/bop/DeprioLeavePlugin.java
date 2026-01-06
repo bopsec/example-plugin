@@ -35,6 +35,7 @@ public class DeprioLeavePlugin extends Plugin
 	private DeprioLeaveConfig config;
 
 	private List<Pattern> deprioOptionPatterns = List.of();
+	private List<Pattern> deprioItemPatterns = List.of();
 
 	private final Map<WorldPoint, Map<Integer, Integer>> groundItems = new HashMap<>();
 
@@ -83,37 +84,41 @@ public class DeprioLeavePlugin extends Plugin
 
 		MenuEntry[] entries = client.getMenuEntries();
 
-		int walkIdx = -1;
-		for (int i = 0; i < entries.length; i++)
-			if (entries[i].getType() == MenuAction.WALK)
-				walkIdx = i;
-
-		if (walkIdx == -1)
-			return;
-
-		List<MenuEntry> exits = new ArrayList<>();
+		List<MenuEntry> deprio = new ArrayList<>();
 		List<MenuEntry> rest = new ArrayList<>();
 
 		for (MenuEntry me : entries)
 		{
-			if (isExitOption(me))
-				exits.add(me);
+			if (shouldDeprioritize(me))
+				deprio.add(me);
 			else
 				rest.add(me);
 		}
 
-		int insertPos = rest.size();
-		for (int i = 0; i < rest.size(); i++)
-			if (rest.get(i).getType() == MenuAction.WALK)
-				insertPos = i;
+		if (deprio.isEmpty())
+			return;
 
-		rest.addAll(insertPos, exits);
+		int anchor = findAnchor(rest);
 
+		rest.addAll(anchor, deprio);
 		client.setMenuEntries(rest.toArray(new MenuEntry[0]));
 	}
 
+	private int findAnchor(List<MenuEntry> entries)
+	{
+		// Object menus, place below "walk here"
+		for (int i = 0; i < entries.size(); i++)
+			if (entries.get(i).getType() == MenuAction.WALK)
+				return i;
 
+		// Inventory / widget menus, place below "use"
+		for (int i = 0; i < entries.size(); i++)
+			if ("use".equalsIgnoreCase(Text.removeTags(entries.get(i).getOption())))
+				return i;
 
+		// Fallback: push to bottom
+		return entries.size() - 1;
+	}
 
 	private boolean lootExists()
 	{
@@ -177,17 +182,39 @@ public class DeprioLeavePlugin extends Plugin
 		rebuildMenu();
 	}
 
-
-
-	private boolean isExitOption(MenuEntry e)
+	private boolean shouldDeprioritize(MenuEntry e)
 	{
 		String opt = Text.removeTags(e.getOption()).toLowerCase();
 
-		for (Pattern p : deprioOptionPatterns)
-			if (p.matcher(opt).matches())
-				return true;
+		// Only apply to:
+		//  - objects (doors)
+		//  - widgets (inventory / equipment / spells)
+		MenuAction t = e.getType();
+		boolean eligible = t == MenuAction.CC_OP || t == MenuAction.CC_OP_LOW_PRIORITY ||
+						(t.getId() >= MenuAction.GAME_OBJECT_FIRST_OPTION.getId()
+								&& t.getId() <= MenuAction.GAME_OBJECT_FIFTH_OPTION.getId());
 
-		return false;
+		if (!eligible)
+			return false;
+
+		if (t == MenuAction.CC_OP || t == MenuAction.CC_OP_LOW_PRIORITY) {
+			for (Pattern p : deprioItemPatterns)
+				if (p.matcher(opt).matches())
+					return true;
+			return false;
+		}
+
+		else {
+			for (Pattern p : deprioOptionPatterns)
+				if (p.matcher(opt).matches()) return true;
+			return false;
+		}
+	}
+
+	private boolean isWidgetItemEntry(MenuEntry e)
+	{
+		MenuAction t = e.getType();
+		return t == MenuAction.CC_OP || t == MenuAction.CC_OP_LOW_PRIORITY;
 	}
 
 	private boolean isWhitelisted(int itemId)
@@ -217,9 +244,18 @@ public class DeprioLeavePlugin extends Plugin
 				.map(this::wildcardToRegex)
 				.map(Pattern::compile)
 				.collect(Collectors.toList());
+
 		// and menuoptions to deprio
-		// can we add stuff like "teleport" / "break" ? idk
 		deprioOptionPatterns = Arrays.stream(config.deprioOptions().split(","))
+				.map(String::trim)
+				.filter(s -> !s.isEmpty())
+				.map(String::toLowerCase)
+				.map(this::wildcardToRegex)
+				.map(Pattern::compile)
+				.collect(Collectors.toList());
+
+		// add widget options to deprio
+		deprioItemPatterns = Arrays.stream(config.deprioItems().split(","))
 				.map(String::trim)
 				.filter(s -> !s.isEmpty())
 				.map(String::toLowerCase)
