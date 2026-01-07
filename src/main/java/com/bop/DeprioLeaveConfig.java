@@ -40,6 +40,6 @@ public interface DeprioLeaveConfig extends Config
 	)
 	default String deprioItems()
 	{
-		return "teleport,break";
+		return "break,nardah";
 	}
 }
