@@ -7,7 +7,7 @@ public class ExamplePluginTest
 {
 	public static void main(String[] args) throws Exception
 	{
-		ExternalPluginManager.loadBuiltin(DeprioLeavePlugin.class);
+		ExternalPluginManager.loadBuiltin(HotkeyHideSidepanelsPlugin.class);
 		RuneLite.main(args);
 	}
 }

@@ -1,4 +1,4 @@
-# Deprioritize leave
-Deprioritizes options if items above x value, or items in whitelist, are present in the current instance.
+# Hotkey toggle sidepanel
+Hide and show sidepanels on resizable modern without needing to use the (same) fkeys
 
-Useful for stuff like resetting instances on slow respawning mobs so you don't leave hydra's lair with a hydra's claw on the ground.
+Does not require the "Modern Layout - Side panel can be closed by the hotkeys" setting to be enabled
