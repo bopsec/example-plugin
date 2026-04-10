@@ -7,7 +7,7 @@ public class ExamplePluginTest
 {
 	public static void main(String[] args) throws Exception
 	{
-		ExternalPluginManager.loadBuiltin(HotkeyHideSidepanelsPlugin.class);
+		ExternalPluginManager.loadBuiltin(NoMisclickRepotPlugin.class);
 		RuneLite.main(args);
 	}
 }
