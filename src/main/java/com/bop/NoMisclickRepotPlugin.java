@@ -105,7 +105,7 @@ public class NoMisclickRepotPlugin extends Plugin
 	@Subscribe
 	public void onPostMenuSort(PostMenuSort e)
 	{
-		MenuEntry[] menuEntries = client.getMenuEntries();
+		MenuEntry[] menuEntries = client.getMenu().getMenuEntries();
 		for (MenuEntry menuEntry : menuEntries)
 		{
 			if (!shouldDeprioritize(menuEntry))
@@ -113,11 +113,11 @@ public class NoMisclickRepotPlugin extends Plugin
 				continue;
 			}
 
-			client.setMenuEntries(insertNoOpEntry(menuEntries, menuEntry));
+			client.getMenu().setMenuEntries(insertNoOpEntry(menuEntries));
 			return;
 		}
 
-		client.setMenuEntries(menuEntries);
+		client.getMenu().setMenuEntries(menuEntries);
 	}
 
 	@Override
@@ -207,12 +207,12 @@ public class NoMisclickRepotPlugin extends Plugin
 		return toaOverloadPots.contains(itemId) && remainingTicks > config.timeLeft();
 	}
 
-	private MenuEntry[] insertNoOpEntry(MenuEntry[] menuEntries, MenuEntry protectedEntry)
+	private MenuEntry[] insertNoOpEntry(MenuEntry[] menuEntries)
 	{
 		MenuEntry[] newEntries = Arrays.copyOf(menuEntries, menuEntries.length + 1);
 		System.arraycopy(menuEntries, 0, newEntries, 0, menuEntries.length);
 
-		newEntries[newEntries.length - 1] = client.createMenuEntry(newEntries.length - 1)
+		newEntries[newEntries.length - 1] = client.getMenu().createMenuEntry(newEntries.length - 1)
 			.setOption(NO_OP_OPTION)
 			.setTarget("")
 			.setType(MenuAction.RUNELITE)
