@@ -139,20 +139,47 @@ public class NoMisclickRepotPlugin extends Plugin
 		}
 
 		int itemId = menuEntry.getItemId();
-		// this is the ugliest return statement i have ever written
-		return config.divines() && (
-			(isActiveTimedEffect(itemId, rangingPotionPots, divineBastion) && isRangeBoostAboveThreshold())
-				|| (isActiveTimedEffect(itemId, rangingPotionPots, divineRanging) && isRangeBoostAboveThreshold())
-				|| (isActiveTimedEffect(itemId, divineScbPots, divineScb) && isScbBoostAboveThreshold())
-				|| isActiveTimedEffect(itemId, divineStrPots, divineStr)
-				|| isActiveTimedEffect(itemId, divineAtkPots, divineAtk)
-		)
-			|| isActivePrayerRegenEffect(itemId)
-			|| config.antipoison() && isActivePoisonEffect(itemId)
-			|| isActiveCoxOverload(itemId)
-			|| config.toaSalt() && isActiveToaSaltEffect(itemId)
-			|| config.toaLiquidAdren() && isActiveTimedEffect(itemId, toaLiquidAdrenalinePots, toaLiquidAdrenaline)
-			|| config.coxEnhance() && isActiveCoxPrayerEnhanceEffect(itemId);
+		return isActiveDivine(itemId)
+			|| isActivePrayerRegen(itemId)
+			|| isProtectedAntipoison(itemId)
+			|| isUnderCoxPotionEffect(itemId)
+			|| isActiveToaPotion(itemId);
+	}
+
+	private boolean isActiveDivine(int itemId)
+	{
+		if (!config.divines())
+		{
+			return false;
+		}
+
+		return (isActiveTimedEffect(itemId, rangingPotionPots, divineBastion) && isRangeBoostAboveThreshold())
+			|| (isActiveTimedEffect(itemId, rangingPotionPots, divineRanging) && isRangeBoostAboveThreshold())
+			|| (isActiveTimedEffect(itemId, divineScbPots, divineScb) && isScbBoostAboveThreshold())
+			|| isActiveTimedEffect(itemId, divineStrPots, divineStr)
+			|| isActiveTimedEffect(itemId, divineAtkPots, divineAtk);
+	}
+
+	private boolean isActivePrayerRegen(int itemId)
+	{
+		return isActivePrayerRegenEffect(itemId);
+	}
+
+	private boolean isProtectedAntipoison(int itemId)
+	{
+		return config.antipoison() && isActivePoisonEffect(itemId);
+	}
+
+	private boolean isUnderCoxPotionEffect(int itemId)
+	{
+		return isActiveCoxOverload(itemId)
+			|| (config.coxEnhance() && isActiveCoxPrayerEnhanceEffect(itemId));
+	}
+
+	private boolean isActiveToaPotion(int itemId)
+	{
+		return (config.toaSalt() && isActiveToaSaltEffect(itemId))
+			|| (config.toaLiquidAdren() && isActiveTimedEffect(itemId, toaLiquidAdrenalinePots, toaLiquidAdrenaline));
 	}
 
 	private boolean isActiveTimedEffect(int itemId, List<Integer> itemIds, int varbitId)

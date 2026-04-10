@@ -1,4 +1,4 @@
-# Hotkey toggle sidepanel
-Hide and show sidepanels on resizable modern without needing to use the (same) fkeys
+# No Misclick Repot
+Moves the "Drink" (or "Eat") options so that you won't misclick drink another dose if you are already under the effect of the potion.
 
-Does not require the "Modern Layout - Side panel can be closed by the hotkeys" setting to be enabled
+With added customization so you can still drink if you are close to losing the effect.
