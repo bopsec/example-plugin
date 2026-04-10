@@ -21,8 +21,8 @@ import net.runelite.client.plugins.PluginDescriptor;
 
 @PluginDescriptor(
 	name = "No Misclick Repot",
-	description = "Deprioritize repot options while matching buffs are still active",
-	tags = {"potion", "repot", "inventory", "menu"}
+	description = "Deprioritize Drink options while matching buffs are still active",
+	tags = {"potion", "repot", "inventory", "pot", "misclick"}
 )
 public class NoMisclickRepotPlugin extends Plugin
 {
