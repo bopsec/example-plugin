@@ -50,9 +50,10 @@ public class NoMisclickRepotPlugin extends Plugin
 			ItemID._1DOSEDIVINERANGE
 		)
 	).collect(Collectors.toList());
-	int divineScb = VarbitID.DIVINECOMBAT_POTION_TIME;
+	int divineScb = VarbitID.DIVINECOMBAT_POTION_TIME; // This uses ATK, DEF and STR as well
 	int divineStr = VarbitID.DIVINESTRENGTH_POTION_TIME;
 	int divineAtk = VarbitID.DIVINEATTACK_POTION_TIME;
+	// fuck a def pot
 	List<Integer> divineScbPots = List.of(ItemID._4DOSEDIVINECOMBAT, ItemID._3DOSEDIVINECOMBAT, ItemID._2DOSEDIVINECOMBAT, ItemID._1DOSEDIVINECOMBAT);
 	List<Integer> divineStrPots = List.of(ItemID._4DOSEDIVINESTRENGTH, ItemID._3DOSEDIVINESTRENGTH, ItemID._2DOSEDIVINESTRENGTH, ItemID._1DOSEDIVINESTRENGTH);
 	List<Integer> divineAtkPots = List.of(ItemID._4DOSEDIVINEATTACK, ItemID._3DOSEDIVINEATTACK, ItemID._2DOSEDIVINEATTACK, ItemID._1DOSEDIVINEATTACK);
@@ -62,7 +63,12 @@ public class NoMisclickRepotPlugin extends Plugin
 	 */
 	int prayerRegen = VarbitID.PRAYER_REGENERATION_POTION_TIMER;
 	List<Integer> prayerRegenPots = List.of(ItemID._4DOSE1PRAYER_REGENERATION, ItemID._3DOSE1PRAYER_REGENERATION, ItemID._2DOSE1PRAYER_REGENERATION, ItemID._1DOSE1PRAYER_REGENERATION);
-	int coxPrayerEnhanceRate = VarbitID.RAIDS_PRAYERENHANCE_RATE;
+
+	/*
+	Goading potion
+	 */
+	int goading = VarbitID.GOADING_POTION_TIMER;
+	List<Integer> goadingPots = List.of(ItemID._4DOSEGOADING, ItemID._3DOSEGOADING, ItemID._2DOSEGOADING, ItemID._1DOSEGOADING);
 
 	/*
 	Antipoison / Anvi-venom
@@ -90,6 +96,7 @@ public class NoMisclickRepotPlugin extends Plugin
 
 	int coxEnhance = VarbitID.RAIDS_PRAYERENHANCE_TIMER;
 	List<Integer> coxEnhancePots = List.of(ItemID.RAIDS_VIAL_PRAYER_STRONG_4, ItemID.RAIDS_VIAL_PRAYER_STRONG_3, ItemID.RAIDS_VIAL_PRAYER_STRONG_2, ItemID.RAIDS_VIAL_PRAYER_STRONG_1);
+	int coxPrayerEnhanceRate = VarbitID.RAIDS_PRAYERENHANCE_RATE;
 
 	int toaOverload = VarbitID.TOA_MIDRAIDLOOT_STATS_TIMER;
 	List<Integer> toaOverloadPots = List.of(ItemID.TOA_SUPPLY_STATS_2, ItemID.TOA_SUPPLY_STATS_1);
@@ -106,18 +113,16 @@ public class NoMisclickRepotPlugin extends Plugin
 	public void onPostMenuSort(PostMenuSort e)
 	{
 		MenuEntry[] menuEntries = client.getMenu().getMenuEntries();
-		for (MenuEntry menuEntry : menuEntries)
+		if (menuEntries.length == 0)
 		{
-			if (!shouldDeprioritize(menuEntry))
-			{
-				continue;
-			}
-
-			client.getMenu().setMenuEntries(insertNoOpEntry(menuEntries));
 			return;
 		}
 
-		client.getMenu().setMenuEntries(menuEntries);
+		MenuEntry topEntry = menuEntries[menuEntries.length - 1];
+		if (shouldDeprioritize(topEntry))
+		{
+			client.getMenu().setMenuEntries(insertNoOpEntry(menuEntries));
+		}
 	}
 
 	@Override
@@ -141,6 +146,7 @@ public class NoMisclickRepotPlugin extends Plugin
 		int itemId = menuEntry.getItemId();
 		return isActiveDivine(itemId)
 			|| isActivePrayerRegen(itemId)
+			|| isActiveGoading(itemId)
 			|| isProtectedAntipoison(itemId)
 			|| isUnderCoxPotionEffect(itemId)
 			|| isActiveToaPotion(itemId);
@@ -163,6 +169,14 @@ public class NoMisclickRepotPlugin extends Plugin
 	private boolean isActivePrayerRegen(int itemId)
 	{
 		return isActivePrayerRegenEffect(itemId);
+	}
+
+	private boolean isActiveGoading(int itemId)
+	{
+		int goadingValue = client.getVarbitValue(goading);
+		int remainingTicks = goadingValue * 6;
+
+		return goadingPots.contains(itemId) && remainingTicks > config.timeLeft();
 	}
 
 	private boolean isProtectedAntipoison(int itemId)
