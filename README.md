@@ -1,4 +1,15 @@
 # No Misclick Repot
-Moves the "Drink" (or "Eat") options so that you won't misclick drink another dose if you are already under the effect of the potion.
+Inserts a no-op "Waiting..." option to the top of the menuoption of potion items when you are still under the effect of the potion.
+![img](https://i.imgur.com/SzGjNVB.gif)
+Can still right click sip if needed, with customizable repot time (in ticks) when the menuoption is no longer deprioritized.
+Shift click drop will also still work, it is only if "Drink" (or "Eat", but currently unused) is the top option.
+Reducing your stats to below the boost threshold will also allow you to left click drink again.
 
-With added customization so you can still drink if you are close to losing the effect.
+
+Currently supports
+- Divine potions (not all of them)
+- Prayer regen
+- Goading
+- Antipoison/Venom
+- CoX Overload and Enhance
+- ToA Salt and Liquid adrenaline
