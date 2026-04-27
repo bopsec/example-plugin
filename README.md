@@ -4,7 +4,7 @@ Deprioritizes options if items above x value, or items in whitelist, are present
 Useful for stuff like resetting instances on slow respawning mobs so you don't leave phosani with an inquistor's mace on the ground.
 
 ## Setup
-Add any items you would like to whitelist to the Whitelist, or set the Value Over to whatever.\
+Add any items you would like to whitelist to the Whitelist, or set the Value Over to whatever value you wouldn't want to leave on the ground.\
 The whitelist supports wildcards, so for example "Jar of*" will include every boss jar, and *(elite) will include Clue scroll (elite) and Scroll box (elite).
 
 ## Deprioritzed object options
