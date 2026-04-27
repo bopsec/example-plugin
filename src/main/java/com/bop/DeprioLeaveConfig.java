@@ -17,7 +17,7 @@ public interface DeprioLeaveConfig extends Config
 	@ConfigItem(
 			keyName = "whitelist",
 			name = "Whitelist",
-			description = "Comma seperated item whitelist",
+			description = "Comma seperated item whitelist (supports * wildcards)",
 			position = 1
 	)
 	default String whitelist() { return "*(elite), *(hard), *(master), Twisted bow"; }
