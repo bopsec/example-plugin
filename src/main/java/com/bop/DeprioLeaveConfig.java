@@ -29,7 +29,7 @@ public interface DeprioLeaveConfig extends Config
 	)
 	default String deprioOptions()
 	{
-		return "exit,leave,quick-exit,quick-leave";
+		return "exit,leave,quick-exit,quick-leave,pass-through,travel,quick-travel";
 	}
 	@ConfigItem(
 			keyName= "deprioItems",
