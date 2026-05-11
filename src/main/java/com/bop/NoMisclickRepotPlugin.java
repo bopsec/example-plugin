@@ -7,10 +7,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import net.runelite.api.Client;
+import net.runelite.api.Item;
+import net.runelite.api.ItemContainer;
 import net.runelite.api.MenuAction;
 import net.runelite.api.MenuEntry;
 import net.runelite.api.Skill;
 import net.runelite.api.events.PostMenuSort;
+import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.api.gameval.VarbitID;
@@ -18,6 +21,7 @@ import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.ui.overlay.OverlayManager;
 
 @PluginDescriptor(
 	name = "No Misclick Repot",
@@ -35,6 +39,18 @@ public class NoMisclickRepotPlugin extends Plugin
 
 	@Inject
 	private NoMisclickRepotConfig config;
+
+	@Inject
+	private OverlayManager overlayManager;
+
+	@Inject
+	private NoMisclickRepotItemOverlay itemOverlay;
+
+	/*
+	For timers and such, look at clientscript 5923 (buff_bar_get_value)
+	https://github.com/Joshua-F/osrs-dumps/blob/master/script/%5Bproc%2Cbuff_bar_get_value%5D.cs2
+	Can also see how often the varbit changes here etc.
+	 */
 	/*
 	Divines
 	 */
@@ -71,7 +87,7 @@ public class NoMisclickRepotPlugin extends Plugin
 	List<Integer> goadingPots = List.of(ItemID._4DOSEGOADING, ItemID._3DOSEGOADING, ItemID._2DOSEGOADING, ItemID._1DOSEGOADING);
 
 	/*
-	Antipoison / Anvi-venom
+	Antipoison / Anti-venom
 	 */
 	int anti = VarPlayerID.POISON; // Negative values indicate active poison or venom immunity.
 	List<Integer> venomPots = List.of(
@@ -128,11 +144,13 @@ public class NoMisclickRepotPlugin extends Plugin
 	@Override
 	protected void startUp()
 	{
+		overlayManager.add(itemOverlay);
 	}
 
 	@Override
 	protected void shutDown()
 	{
+		overlayManager.remove(itemOverlay);
 	}
 
 	private boolean shouldDeprioritize(MenuEntry menuEntry)
@@ -144,17 +162,17 @@ public class NoMisclickRepotPlugin extends Plugin
 		}
 
 		int itemId = menuEntry.getItemId();
-		return isActiveDivine(itemId)
-			|| isActivePrayerRegen(itemId)
-			|| isActiveGoading(itemId)
-			|| isProtectedAntipoison(itemId)
-			|| isUnderCoxPotionEffect(itemId)
-			|| isActiveToaPotion(itemId);
+		return getPotionOverlayState(itemId) != null;
 	}
 
 	private boolean isActiveDivine(int itemId)
 	{
 		if (!config.divines())
+		{
+			return false;
+		}
+
+		if (isBelowDivineHpBypassThreshold())
 		{
 			return false;
 		}
@@ -168,11 +186,16 @@ public class NoMisclickRepotPlugin extends Plugin
 
 	private boolean isActivePrayerRegen(int itemId)
 	{
-		return isActivePrayerRegenEffect(itemId);
+		return config.prayerRegen() && isActivePrayerRegenEffect(itemId);
 	}
 
 	private boolean isActiveGoading(int itemId)
 	{
+		if (!config.goading())
+		{
+			return false;
+		}
+
 		int goadingValue = client.getVarbitValue(goading);
 		int remainingTicks = goadingValue * 6;
 
@@ -182,18 +205,6 @@ public class NoMisclickRepotPlugin extends Plugin
 	private boolean isProtectedAntipoison(int itemId)
 	{
 		return config.antipoison() && isActivePoisonEffect(itemId);
-	}
-
-	private boolean isUnderCoxPotionEffect(int itemId)
-	{
-		return isActiveCoxOverload(itemId)
-			|| (config.coxEnhance() && isActiveCoxPrayerEnhanceEffect(itemId));
-	}
-
-	private boolean isActiveToaPotion(int itemId)
-	{
-		return (config.toaSalt() && isActiveToaSaltEffect(itemId))
-			|| (config.toaLiquidAdren() && isActiveTimedEffect(itemId, toaLiquidAdrenalinePots, toaLiquidAdrenaline));
 	}
 
 	private boolean isActiveTimedEffect(int itemId, List<Integer> itemIds, int varbitId)
@@ -271,5 +282,210 @@ public class NoMisclickRepotPlugin extends Plugin
 	private boolean isScbBoostAboveThreshold()
 	{
 		return client.getBoostedSkillLevel(Skill.STRENGTH) > config.scbBoostThreshold();
+	}
+
+	private boolean isBelowDivineHpBypassThreshold()
+	{
+		int threshold = config.divineHpBypassThreshold();
+		return threshold > 0 && client.getBoostedSkillLevel(Skill.HITPOINTS) < threshold;
+	}
+
+	PotionOverlayState getPotionOverlayState(int itemId)
+	{
+		if (isActiveDivine(itemId))
+		{
+			return new PotionOverlayState(getPotionGroup(itemId), ticksUntilAllowed(getDivineRemainingTicks(itemId)), getPotionDose(itemId));
+		}
+
+		if (isActivePrayerRegen(itemId))
+		{
+			return new PotionOverlayState(PotionGroup.PRAYER_REGEN, ticksUntilAllowed(client.getVarbitValue(prayerRegen) * 12), getPotionDose(itemId));
+		}
+
+		if (isActiveGoading(itemId))
+		{
+			return new PotionOverlayState(PotionGroup.GOADING, ticksUntilAllowed(client.getVarbitValue(goading) * 6), getPotionDose(itemId));
+		}
+
+		if (isProtectedAntipoison(itemId))
+		{
+			return new PotionOverlayState(getPotionGroup(itemId), ticksUntilAllowed(-client.getVarpValue(anti) * 30), getPotionDose(itemId));
+		}
+
+		if (config.coxOverload() && isActiveCoxOverload(itemId))
+		{
+			return new PotionOverlayState(PotionGroup.COX_OVERLOAD, client.getVarbitValue(coxOverload), getPotionDose(itemId));
+		}
+
+		if (config.coxEnhance() && isActiveCoxPrayerEnhanceEffect(itemId))
+		{
+			return new PotionOverlayState(PotionGroup.COX_ENHANCE, ticksUntilAllowed(client.getVarbitValue(coxEnhance) * client.getVarbitValue(coxPrayerEnhanceRate)), getPotionDose(itemId));
+		}
+
+		if (config.toaSalt() && isActiveToaSaltEffect(itemId))
+		{
+			return new PotionOverlayState(PotionGroup.TOA_SALT, ticksUntilAllowed(client.getVarbitValue(toaOverload) * 25), getPotionDose(itemId));
+		}
+
+		if (config.toaLiquidAdren() && isActiveTimedEffect(itemId, toaLiquidAdrenalinePots, toaLiquidAdrenaline))
+		{
+			return new PotionOverlayState(PotionGroup.TOA_LIQUID_ADRENALINE, ticksUntilAllowed(client.getVarbitValue(toaLiquidAdrenaline)), getPotionDose(itemId));
+		}
+
+		return null;
+	}
+
+	boolean shouldShowTimer(int itemSlot, PotionOverlayState state)
+	{
+		ItemContainer inventory = client.getItemContainer(InventoryID.INV); // 93
+		if (inventory == null)
+		{
+			return true;
+		}
+
+		int selectedSlot = -1;
+		int selectedDose = Integer.MAX_VALUE;
+		Item[] items = inventory.getItems();
+		for (int i = 0; i < items.length; i++)
+		{
+			PotionOverlayState itemState = getPotionOverlayState(items[i].getId());
+			if (itemState == null || itemState.group != state.group)
+			{
+				continue;
+			}
+
+			if (itemState.dose < selectedDose)
+			{
+				selectedDose = itemState.dose;
+				selectedSlot = i;
+			}
+		}
+
+		return selectedSlot == -1 || selectedSlot == itemSlot;
+	}
+
+	private int getDivineRemainingTicks(int itemId)
+	{
+		int remainingTicks = 0;
+		if (rangingPotionPots.contains(itemId) && isRangeBoostAboveThreshold())
+		{
+			remainingTicks = Math.max(remainingTicks, client.getVarbitValue(divineBastion));
+			remainingTicks = Math.max(remainingTicks, client.getVarbitValue(divineRanging));
+		}
+
+		if (divineScbPots.contains(itemId) && isScbBoostAboveThreshold())
+		{
+			remainingTicks = Math.max(remainingTicks, client.getVarbitValue(divineScb));
+		}
+
+		if (divineStrPots.contains(itemId))
+		{
+			remainingTicks = Math.max(remainingTicks, client.getVarbitValue(divineStr));
+		}
+
+		if (divineAtkPots.contains(itemId))
+		{
+			remainingTicks = Math.max(remainingTicks, client.getVarbitValue(divineAtk));
+		}
+
+		return remainingTicks;
+	}
+
+	private int ticksUntilAllowed(int remainingTicks)
+	{
+		return Math.max(0, remainingTicks - config.timeLeft());
+	}
+
+	private PotionGroup getPotionGroup(int itemId)
+	{
+		if (divineBastionPots.contains(itemId))
+		{
+			return PotionGroup.DIVINE_BASTION;
+		}
+
+		if (rangingPotionPots.contains(itemId))
+		{
+			return PotionGroup.DIVINE_RANGING;
+		}
+
+		if (divineScbPots.contains(itemId))
+		{
+			return PotionGroup.DIVINE_SUPER_COMBAT;
+		}
+
+		if (divineStrPots.contains(itemId))
+		{
+			return PotionGroup.DIVINE_STRENGTH;
+		}
+
+		if (divineAtkPots.contains(itemId))
+		{
+			return PotionGroup.DIVINE_ATTACK;
+		}
+
+		if (venomPots.contains(itemId))
+		{
+			return PotionGroup.ANTIVENOM;
+		}
+
+		if (poisonPots.contains(itemId))
+		{
+			return PotionGroup.ANTIPOISON;
+		}
+
+		return PotionGroup.UNKNOWN;
+	}
+
+	private int getPotionDose(int itemId)
+	{
+		String itemName = client.getItemDefinition(itemId).getName();
+		if (itemName.contains("(1)"))
+		{
+			return 1;
+		}
+
+		if (itemName.contains("(2)"))
+		{
+			return 2;
+		}
+
+		if (itemName.contains("(3)"))
+		{
+			return 3;
+		}
+
+		return 4;
+	}
+
+	enum PotionGroup
+	{
+		DIVINE_BASTION,
+		DIVINE_RANGING,
+		DIVINE_SUPER_COMBAT,
+		DIVINE_STRENGTH,
+		DIVINE_ATTACK,
+		PRAYER_REGEN,
+		GOADING,
+		ANTIPOISON,
+		ANTIVENOM,
+		COX_OVERLOAD,
+		COX_ENHANCE,
+		TOA_SALT,
+		TOA_LIQUID_ADRENALINE,
+		UNKNOWN
+	}
+
+	static class PotionOverlayState
+	{
+		final PotionGroup group;
+		final int ticksUntilAllowed;
+		final int dose;
+
+		PotionOverlayState(PotionGroup group, int ticksUntilAllowed, int dose)
+		{
+			this.group = group;
+			this.ticksUntilAllowed = ticksUntilAllowed;
+			this.dose = dose;
+		}
 	}
 }

@@ -1,12 +1,36 @@
 package com.bop;
 
+import java.awt.Color;
+import net.runelite.client.config.Alpha;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
+import net.runelite.client.config.ConfigSection;
 
 @ConfigGroup("NoMisclickRepot")
 public interface NoMisclickRepotConfig extends Config
 {
+	@ConfigSection(
+		name = "Potions",
+		description = "Potion types to deprioritize while their effects are active",
+		position = 1
+	)
+	String potionsSection = "potions";
+
+	@ConfigSection(
+		name = "Overlay",
+		description = "Inventory indicators for blocked potion items",
+		position = 2
+	)
+	String overlaySection = "overlay";
+
+	@ConfigSection(
+		name = "Advanced",
+		description = "Advanced behavior overrides",
+		position = 3
+	)
+	String advancedSection = "advanced";
+
 	@ConfigItem(
 		keyName = "timeLeft",
 		name = "Repot time",
@@ -22,17 +46,20 @@ public interface NoMisclickRepotConfig extends Config
 		keyName = "divines",
 		name = "Divines",
 		description = "Enable for divines",
-		position = 1
+		position = 1,
+		section = potionsSection
 	)
 	default boolean divines()
 	{
 		return true;
 	}
+
 	@ConfigItem(
 		keyName = "rangeBoostThreshold",
 		name = "Range boost threshold",
 		description = "Threshold under which we ignore the repot time",
-		position = 2
+		position = 2,
+		section = potionsSection
 	)
 	default int rangeBoostThreshold()
 	{
@@ -43,7 +70,8 @@ public interface NoMisclickRepotConfig extends Config
 		keyName = "scbBoostThreshold",
 		name = "Scb boost threshold",
 		description = "Threshold under which we ignore the repot time, specifically checks Strength boost",
-		position = 3
+		position = 3,
+		section = potionsSection
 	)
 	default int scbBoostThreshold()
 	{
@@ -51,12 +79,61 @@ public interface NoMisclickRepotConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "divineHpBypassThreshold",
+		name = "Divine HP bypass",
+		description = "Allow divine repotting when current Hitpoints is below this value. Set to 0 to disable.",
+		position = 1,
+		section = advancedSection
+	)
+	default int divineHpBypassThreshold()
+	{
+		return 0;
+	}
+
+	@ConfigItem(
 		keyName = "antipoison",
 		name = "Antipoison/venom",
 		description = "Enable for antipoisons and antivenoms",
-		position = 4
+		position = 10,
+		section = potionsSection
 	)
 	default boolean antipoison()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "prayerRegen",
+		name = "Prayer regen",
+		description = "Enable for prayer regeneration potions",
+		position = 11,
+		section = potionsSection
+	)
+	default boolean prayerRegen()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "goading",
+		name = "Goading",
+		description = "Enable for goading potions",
+		position = 12,
+		section = potionsSection
+	)
+	default boolean goading()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "coxOverload",
+		name = "CoX Overload",
+		description = "Enable for CoX overloads (only +)",
+		position = 20,
+		section = potionsSection
+	)
+	default boolean coxOverload()
 	{
 		return true;
 	}
@@ -65,18 +142,20 @@ public interface NoMisclickRepotConfig extends Config
 		keyName = "coxEnhance",
 		name = "CoX Enhance",
 		description = "Enable for CoX Prayer Enhance",
-		position = 10
+		position = 21,
+		section = potionsSection
 	)
 	default boolean coxEnhance()
 	{
-		return false;
+		return true;
 	}
 
 	@ConfigItem(
 		keyName = "toaSalt",
 		name = "Toa Salt",
 		description = "Enable for TOA salt",
-		position = 20
+		position = 30,
+		section = potionsSection
 	)
 	default boolean toaSalt()
 	{
@@ -87,10 +166,60 @@ public interface NoMisclickRepotConfig extends Config
 		keyName = "toaLiquidAdren",
 		name = "Toa Adren",
 		description = "Enable for TOA Liquid Adrenaline",
-		position = 21
+		position = 31,
+		section = potionsSection
 	)
 	default boolean toaLiquidAdren()
 	{
 		return true;
+	}
+
+	@ConfigItem(
+		keyName = "blockedOverlay",
+		name = "Blocked overlay",
+		description = "Show an indicator on potion items while repotting is blocked",
+		position = 30,
+		section = overlaySection
+	)
+	default boolean blockedOverlay()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "repotTimer",
+		name = "Repot timer",
+		description = "Ticks until repotting is allowed, only updates when varb updates",
+		position = 31,
+		section = overlaySection
+	)
+	default boolean repotTimer()
+	{
+		return true;
+	}
+
+	@Alpha
+	@ConfigItem(
+		keyName = "blockedOverlayColor",
+		name = "Overlay colour",
+		description = "Colour used for blocked potion item overlays",
+		position = 32,
+		section = overlaySection
+	)
+	default Color blockedOverlayColor()
+	{
+		return new Color(110, 120, 125, 80);
+	}
+
+	@ConfigItem(
+		keyName = "timerTextSize",
+		name = "Timer text size",
+		description = "Text size for the repot timer",
+		position = 33,
+		section = overlaySection
+	)
+	default int timerTextSize()
+	{
+		return 14;
 	}
 }
