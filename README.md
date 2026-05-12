@@ -8,9 +8,10 @@ Reducing your stats to below the boost threshold will also allow you to left cli
 
 Currently supports
 - Divine potions (not all of them)
+- Non-divine ranging and super combat potions
 - Prayer regen
 - Goading
-- Antipoison/Venom
+- Antipoison/Venom (+ Araxyte venom sacks)
 - CoX Overload and Enhance
 - ToA Salt and Liquid adrenaline
 

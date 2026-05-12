@@ -49,7 +49,7 @@ public class NoMisclickRepotItemOverlay extends WidgetItemOverlay
 			graphics.draw(bounds);
 		}
 
-		if (config.repotTimer() && plugin.shouldShowTimer(item.getWidget().getIndex(), state))
+		if (config.repotTimer() && state.showTimer && plugin.shouldShowTimer(item.getWidget().getIndex(), state))
 		{
 			renderTimer(graphics, bounds, state.ticksUntilAllowed);
 		}

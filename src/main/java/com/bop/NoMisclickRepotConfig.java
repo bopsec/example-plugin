@@ -20,16 +20,23 @@ public interface NoMisclickRepotConfig extends Config
 	@ConfigSection(
 		name = "Overlay",
 		description = "Inventory indicators for blocked potion items",
-		position = 2
+		position = 3
 	)
 	String overlaySection = "overlay";
 
 	@ConfigSection(
 		name = "Advanced",
 		description = "Advanced behavior overrides",
-		position = 3
+		position = 4
 	)
 	String advancedSection = "advanced";
+
+	@ConfigSection(
+		name = "Non-timed Potions",
+		description = "Potion types to deprioritize using stat checks only",
+		position = 2
+	)
+	String nonTimedPotionsSection = "nonTimedPotions";
 
 	@ConfigItem(
 		keyName = "timeLeft",
@@ -88,6 +95,54 @@ public interface NoMisclickRepotConfig extends Config
 	default int divineHpBypassThreshold()
 	{
 		return 0;
+	}
+
+	@ConfigItem(
+		keyName = "rangingPotions",
+		name = "Ranging potions",
+		description = "Enable for non-divine ranging potions",
+		position = 0,
+		section = nonTimedPotionsSection
+	)
+	default boolean rangingPotions()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = "rangingPotionBoostThreshold",
+		name = "Range boost threshold",
+		description = "Block ranging potions while Ranged is above this value",
+		position = 1,
+		section = nonTimedPotionsSection
+	)
+	default int rangingPotionBoostThreshold()
+	{
+		return 109;
+	}
+
+	@ConfigItem(
+		keyName = "superCombatPotions",
+		name = "Super combat potions",
+		description = "Enable for non-divine super combat potions",
+		position = 2,
+		section = nonTimedPotionsSection
+	)
+	default boolean superCombatPotions()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = "superCombatPotionBoostThreshold",
+		name = "Super combat threshold",
+		description = "Block super combat potions while Strength is above this value",
+		position = 3,
+		section = nonTimedPotionsSection
+	)
+	default int superCombatPotionBoostThreshold()
+	{
+		return 116;
 	}
 
 	@ConfigItem(

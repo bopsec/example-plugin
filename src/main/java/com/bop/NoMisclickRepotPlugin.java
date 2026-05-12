@@ -75,6 +75,12 @@ public class NoMisclickRepotPlugin extends Plugin
 	List<Integer> divineAtkPots = List.of(ItemID._4DOSEDIVINEATTACK, ItemID._3DOSEDIVINEATTACK, ItemID._2DOSEDIVINEATTACK, ItemID._1DOSEDIVINEATTACK);
 
 	/*
+	Non-timed potions
+	 */
+	List<Integer> regularRangingPots = List.of(ItemID._4DOSERANGERSPOTION, ItemID._3DOSERANGERSPOTION, ItemID._2DOSERANGERSPOTION, ItemID._1DOSERANGERSPOTION);
+	List<Integer> regularSuperCombatPots = List.of(ItemID._4DOSE2COMBAT, ItemID._3DOSE2COMBAT, ItemID._2DOSE2COMBAT, ItemID._1DOSE2COMBAT);
+
+	/*
 	Prayer regeneration potion
 	 */
 	int prayerRegen = VarbitID.PRAYER_REGENERATION_POTION_TIMER;
@@ -189,6 +195,12 @@ public class NoMisclickRepotPlugin extends Plugin
 		return config.prayerRegen() && isActivePrayerRegenEffect(itemId);
 	}
 
+	private boolean isActiveNonTimedPotion(int itemId)
+	{
+		return (config.rangingPotions() && regularRangingPots.contains(itemId) && isRegularRangeBoostAboveThreshold())
+			|| (config.superCombatPotions() && regularSuperCombatPots.contains(itemId) && isRegularSuperCombatBoostAboveThreshold());
+	}
+
 	private boolean isActiveGoading(int itemId)
 	{
 		if (!config.goading())
@@ -284,6 +296,16 @@ public class NoMisclickRepotPlugin extends Plugin
 		return client.getBoostedSkillLevel(Skill.STRENGTH) > config.scbBoostThreshold();
 	}
 
+	private boolean isRegularRangeBoostAboveThreshold()
+	{
+		return client.getBoostedSkillLevel(Skill.RANGED) > config.rangingPotionBoostThreshold();
+	}
+
+	private boolean isRegularSuperCombatBoostAboveThreshold()
+	{
+		return client.getBoostedSkillLevel(Skill.STRENGTH) > config.superCombatPotionBoostThreshold();
+	}
+
 	private boolean isBelowDivineHpBypassThreshold()
 	{
 		int threshold = config.divineHpBypassThreshold();
@@ -295,6 +317,11 @@ public class NoMisclickRepotPlugin extends Plugin
 		if (isActiveDivine(itemId))
 		{
 			return new PotionOverlayState(getPotionGroup(itemId), ticksUntilAllowed(getDivineRemainingTicks(itemId)), getPotionDose(itemId));
+		}
+
+		if (isActiveNonTimedPotion(itemId))
+		{
+			return new PotionOverlayState(getPotionGroup(itemId), 0, getPotionDose(itemId), false);
 		}
 
 		if (isActivePrayerRegen(itemId))
@@ -423,6 +450,16 @@ public class NoMisclickRepotPlugin extends Plugin
 			return PotionGroup.DIVINE_ATTACK;
 		}
 
+		if (regularRangingPots.contains(itemId))
+		{
+			return PotionGroup.RANGING;
+		}
+
+		if (regularSuperCombatPots.contains(itemId))
+		{
+			return PotionGroup.SUPER_COMBAT;
+		}
+
 		if (venomPots.contains(itemId))
 		{
 			return PotionGroup.ANTIVENOM;
@@ -464,6 +501,8 @@ public class NoMisclickRepotPlugin extends Plugin
 		DIVINE_SUPER_COMBAT,
 		DIVINE_STRENGTH,
 		DIVINE_ATTACK,
+		RANGING,
+		SUPER_COMBAT,
 		PRAYER_REGEN,
 		GOADING,
 		ANTIPOISON,
@@ -480,12 +519,19 @@ public class NoMisclickRepotPlugin extends Plugin
 		final PotionGroup group;
 		final int ticksUntilAllowed;
 		final int dose;
+		final boolean showTimer;
 
 		PotionOverlayState(PotionGroup group, int ticksUntilAllowed, int dose)
+		{
+			this(group, ticksUntilAllowed, dose, true);
+		}
+
+		PotionOverlayState(PotionGroup group, int ticksUntilAllowed, int dose, boolean showTimer)
 		{
 			this.group = group;
 			this.ticksUntilAllowed = ticksUntilAllowed;
 			this.dose = dose;
+			this.showTimer = showTimer;
 		}
 	}
 }
