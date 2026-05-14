@@ -106,6 +106,8 @@ public class NoMisclickRepotPlugin extends Plugin
 		Stream.of(
 			ItemID._1DOSEANTIPOISON, ItemID._2DOSEANTIPOISON, ItemID._3DOSEANTIPOISON, ItemID._4DOSEANTIPOISON,
 			ItemID._1DOSE2ANTIPOISON, ItemID._2DOSE2ANTIPOISON, ItemID._3DOSE2ANTIPOISON, ItemID._4DOSE2ANTIPOISON,
+			ItemID.ANTIDOTE_1, ItemID.ANTIDOTE_2, ItemID.ANTIDOTE_3, ItemID.ANTIDOTE_4,
+			ItemID.ANTIDOTE__1, ItemID.ANTIDOTE__2, ItemID.ANTIDOTE__3, ItemID.ANTIDOTE__4,
 			ItemID.ARAXYTE_VENOM_SACK
 		)
 	).collect(Collectors.toList());
@@ -240,18 +242,23 @@ public class NoMisclickRepotPlugin extends Plugin
 			return false;
 		}
 
-		int remainingTicks = -poisonValue * 30;
-		return isProtectedPoisonPotion(itemId, poisonValue) && remainingTicks > config.timeLeft();
+		int remainingTicks = getPoisonProtectionRemainingTicks(itemId, poisonValue);
+		return remainingTicks > config.timeLeft();
 	}
 
-	private boolean isProtectedPoisonPotion(int itemId, int poisonValue)
+	private int getPoisonProtectionRemainingTicks(int itemId, int poisonValue)
 	{
 		if (venomPots.contains(itemId))
 		{
-			return poisonValue < -38;
+			return Math.max(0, (-poisonValue - 38) * 30);
 		}
 
-		return poisonPots.contains(itemId) && poisonValue < 0;
+		if (poisonPots.contains(itemId) && poisonValue < 0)
+		{
+			return -poisonValue * 30;
+		}
+
+		return 0;
 	}
 
 	private boolean isActiveCoxOverload(int itemId)
@@ -336,7 +343,8 @@ public class NoMisclickRepotPlugin extends Plugin
 
 		if (isProtectedAntipoison(itemId))
 		{
-			return new PotionOverlayState(getPotionGroup(itemId), ticksUntilAllowed(-client.getVarpValue(anti) * 30), getPotionDose(itemId));
+			int remainingTicks = getPoisonProtectionRemainingTicks(itemId, client.getVarpValue(anti));
+			return new PotionOverlayState(getPotionGroup(itemId), ticksUntilAllowed(remainingTicks), getPotionDose(itemId));
 		}
 
 		if (config.coxOverload() && isActiveCoxOverload(itemId))
