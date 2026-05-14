@@ -3,7 +3,11 @@ package com.bop;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import net.runelite.api.Client;
@@ -12,7 +16,9 @@ import net.runelite.api.ItemContainer;
 import net.runelite.api.MenuAction;
 import net.runelite.api.MenuEntry;
 import net.runelite.api.Skill;
+import net.runelite.api.events.GameTick;
 import net.runelite.api.events.PostMenuSort;
+import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.VarPlayerID;
@@ -45,6 +51,9 @@ public class NoMisclickRepotPlugin extends Plugin
 
 	@Inject
 	private NoMisclickRepotItemOverlay itemOverlay;
+
+	private final Map<Integer, Integer> remainingTicksByTimer = new HashMap<>();
+	private final Set<Integer> timersUpdatedByVarbitThisTick = new HashSet<>();
 
 	/*
 	For timers and such, look at clientscript 5923 (buff_bar_get_value)
@@ -149,6 +158,63 @@ public class NoMisclickRepotPlugin extends Plugin
 		}
 	}
 
+	@Subscribe
+	public void onVarbitChanged(VarbitChanged event)
+	{
+		int varbitId = event.getVarbitId();
+
+		if (varbitId == divineBastion
+			|| varbitId == divineRanging
+			|| varbitId == divineScb
+			|| varbitId == divineStr
+			|| varbitId == divineAtk
+			|| varbitId == coxOverload
+			|| varbitId == toaLiquidAdrenaline)
+		{
+			updateTimerFromVarbit(varbitId, client.getVarbitValue(varbitId));
+			return;
+		}
+
+		if (varbitId == prayerRegen)
+		{
+			updateTimerFromVarbit(prayerRegen, client.getVarbitValue(prayerRegen) * 12);
+			return;
+		}
+
+		if (varbitId == goading)
+		{
+			updateTimerFromVarbit(goading, client.getVarbitValue(goading) * 6);
+			return;
+		}
+
+		if (varbitId == coxEnhance || varbitId == coxPrayerEnhanceRate)
+		{
+			updateTimerFromVarbit(coxEnhance, getLiveCoxEnhanceRemainingTicks());
+			return;
+		}
+
+		if (varbitId == toaOverload)
+		{
+			updateTimerFromVarbit(toaOverload, client.getVarbitValue(toaOverload) * 25);
+		}
+	}
+
+	@Subscribe
+	public void onGameTick(GameTick event)
+	{
+		for (Map.Entry<Integer, Integer> timer : remainingTicksByTimer.entrySet())
+		{
+			if (timersUpdatedByVarbitThisTick.contains(timer.getKey()))
+			{
+				continue;
+			}
+
+			timer.setValue(Math.max(0, timer.getValue() - 1));
+		}
+
+		timersUpdatedByVarbitThisTick.clear();
+	}
+
 	@Override
 	protected void startUp()
 	{
@@ -159,6 +225,8 @@ public class NoMisclickRepotPlugin extends Plugin
 	protected void shutDown()
 	{
 		overlayManager.remove(itemOverlay);
+		remainingTicksByTimer.clear();
+		timersUpdatedByVarbitThisTick.clear();
 	}
 
 	private boolean shouldDeprioritize(MenuEntry menuEntry)
@@ -210,9 +278,7 @@ public class NoMisclickRepotPlugin extends Plugin
 			return false;
 		}
 
-		int goadingValue = client.getVarbitValue(goading);
-		int remainingTicks = goadingValue * 6;
-
+		int remainingTicks = getCachedRemainingTicks(goading, () -> client.getVarbitValue(goading) * 6);
 		return goadingPots.contains(itemId) && remainingTicks > config.timeLeft();
 	}
 
@@ -223,14 +289,12 @@ public class NoMisclickRepotPlugin extends Plugin
 
 	private boolean isActiveTimedEffect(int itemId, List<Integer> itemIds, int varbitId)
 	{
-		return itemIds.contains(itemId) && client.getVarbitValue(varbitId) > config.timeLeft();
+		return itemIds.contains(itemId) && getCachedRemainingTicks(varbitId) > config.timeLeft();
 	}
 
 	private boolean isActivePrayerRegenEffect(int itemId)
 	{
-		int prayerRegenValue = client.getVarbitValue(prayerRegen);
-		int remainingTicks = prayerRegenValue * 12;
-
+		int remainingTicks = getCachedRemainingTicks(prayerRegen, () -> client.getVarbitValue(prayerRegen) * 12);
 		return prayerRegenPots.contains(itemId) && remainingTicks > config.timeLeft();
 	}
 
@@ -263,18 +327,18 @@ public class NoMisclickRepotPlugin extends Plugin
 
 	private boolean isActiveCoxOverload(int itemId)
 	{
-		return coxOverloadPots.contains(itemId) && client.getVarbitValue(coxOverload) > 0;
+		return coxOverloadPots.contains(itemId) && getCachedRemainingTicks(coxOverload) > 0;
 	}
 
 	private boolean isActiveCoxPrayerEnhanceEffect(int itemId)
 	{
-		int remainingTicks = client.getVarbitValue(coxEnhance) * client.getVarbitValue(coxPrayerEnhanceRate);
+		int remainingTicks = getCachedRemainingTicks(coxEnhance, this::getLiveCoxEnhanceRemainingTicks);
 		return coxEnhancePots.contains(itemId) && remainingTicks > config.timeLeft();
 	}
 
 	private boolean isActiveToaSaltEffect(int itemId)
 	{
-		int remainingTicks = client.getVarbitValue(toaOverload) * 25;
+		int remainingTicks = getCachedRemainingTicks(toaOverload, () -> client.getVarbitValue(toaOverload) * 25);
 		return toaOverloadPots.contains(itemId) && remainingTicks > config.timeLeft();
 	}
 
@@ -333,12 +397,12 @@ public class NoMisclickRepotPlugin extends Plugin
 
 		if (isActivePrayerRegen(itemId))
 		{
-			return new PotionOverlayState(PotionGroup.PRAYER_REGEN, ticksUntilAllowed(client.getVarbitValue(prayerRegen) * 12), getPotionDose(itemId));
+			return new PotionOverlayState(PotionGroup.PRAYER_REGEN, ticksUntilAllowed(getCachedRemainingTicks(prayerRegen, () -> client.getVarbitValue(prayerRegen) * 12)), getPotionDose(itemId));
 		}
 
 		if (isActiveGoading(itemId))
 		{
-			return new PotionOverlayState(PotionGroup.GOADING, ticksUntilAllowed(client.getVarbitValue(goading) * 6), getPotionDose(itemId));
+			return new PotionOverlayState(PotionGroup.GOADING, ticksUntilAllowed(getCachedRemainingTicks(goading, () -> client.getVarbitValue(goading) * 6)), getPotionDose(itemId));
 		}
 
 		if (isProtectedAntipoison(itemId))
@@ -349,22 +413,22 @@ public class NoMisclickRepotPlugin extends Plugin
 
 		if (config.coxOverload() && isActiveCoxOverload(itemId))
 		{
-			return new PotionOverlayState(PotionGroup.COX_OVERLOAD, client.getVarbitValue(coxOverload), getPotionDose(itemId));
+			return new PotionOverlayState(PotionGroup.COX_OVERLOAD, getCachedRemainingTicks(coxOverload), getPotionDose(itemId));
 		}
 
 		if (config.coxEnhance() && isActiveCoxPrayerEnhanceEffect(itemId))
 		{
-			return new PotionOverlayState(PotionGroup.COX_ENHANCE, ticksUntilAllowed(client.getVarbitValue(coxEnhance) * client.getVarbitValue(coxPrayerEnhanceRate)), getPotionDose(itemId));
+			return new PotionOverlayState(PotionGroup.COX_ENHANCE, ticksUntilAllowed(getCachedRemainingTicks(coxEnhance, this::getLiveCoxEnhanceRemainingTicks)), getPotionDose(itemId));
 		}
 
 		if (config.toaSalt() && isActiveToaSaltEffect(itemId))
 		{
-			return new PotionOverlayState(PotionGroup.TOA_SALT, ticksUntilAllowed(client.getVarbitValue(toaOverload) * 25), getPotionDose(itemId));
+			return new PotionOverlayState(PotionGroup.TOA_SALT, ticksUntilAllowed(getCachedRemainingTicks(toaOverload, () -> client.getVarbitValue(toaOverload) * 25)), getPotionDose(itemId));
 		}
 
 		if (config.toaLiquidAdren() && isActiveTimedEffect(itemId, toaLiquidAdrenalinePots, toaLiquidAdrenaline))
 		{
-			return new PotionOverlayState(PotionGroup.TOA_LIQUID_ADRENALINE, ticksUntilAllowed(client.getVarbitValue(toaLiquidAdrenaline)), getPotionDose(itemId));
+			return new PotionOverlayState(PotionGroup.TOA_LIQUID_ADRENALINE, ticksUntilAllowed(getCachedRemainingTicks(toaLiquidAdrenaline)), getPotionDose(itemId));
 		}
 
 		return null;
@@ -404,26 +468,47 @@ public class NoMisclickRepotPlugin extends Plugin
 		int remainingTicks = 0;
 		if (rangingPotionPots.contains(itemId) && isRangeBoostAboveThreshold())
 		{
-			remainingTicks = Math.max(remainingTicks, client.getVarbitValue(divineBastion));
-			remainingTicks = Math.max(remainingTicks, client.getVarbitValue(divineRanging));
+			remainingTicks = Math.max(remainingTicks, getCachedRemainingTicks(divineBastion));
+			remainingTicks = Math.max(remainingTicks, getCachedRemainingTicks(divineRanging));
 		}
 
 		if (divineScbPots.contains(itemId) && isScbBoostAboveThreshold())
 		{
-			remainingTicks = Math.max(remainingTicks, client.getVarbitValue(divineScb));
+			remainingTicks = Math.max(remainingTicks, getCachedRemainingTicks(divineScb));
 		}
 
 		if (divineStrPots.contains(itemId))
 		{
-			remainingTicks = Math.max(remainingTicks, client.getVarbitValue(divineStr));
+			remainingTicks = Math.max(remainingTicks, getCachedRemainingTicks(divineStr));
 		}
 
 		if (divineAtkPots.contains(itemId))
 		{
-			remainingTicks = Math.max(remainingTicks, client.getVarbitValue(divineAtk));
+			remainingTicks = Math.max(remainingTicks, getCachedRemainingTicks(divineAtk));
 		}
 
 		return remainingTicks;
+	}
+
+	private void updateTimerFromVarbit(int timerId, int remainingTicks)
+	{
+		remainingTicksByTimer.put(timerId, remainingTicks);
+		timersUpdatedByVarbitThisTick.add(timerId);
+	}
+
+	private int getCachedRemainingTicks(int varbitId)
+	{
+		return getCachedRemainingTicks(varbitId, () -> client.getVarbitValue(varbitId));
+	}
+
+	private int getCachedRemainingTicks(int timerId, TimerValueProvider liveValueProvider)
+	{
+		return remainingTicksByTimer.computeIfAbsent(timerId, ignored -> liveValueProvider.get());
+	}
+
+	private int getLiveCoxEnhanceRemainingTicks()
+	{
+		return client.getVarbitValue(coxEnhance) * client.getVarbitValue(coxPrayerEnhanceRate);
 	}
 
 	private int ticksUntilAllowed(int remainingTicks)
@@ -541,5 +626,10 @@ public class NoMisclickRepotPlugin extends Plugin
 			this.dose = dose;
 			this.showTimer = showTimer;
 		}
+	}
+
+	private interface TimerValueProvider
+	{
+		int get();
 	}
 }

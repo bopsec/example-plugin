@@ -244,7 +244,7 @@ public interface NoMisclickRepotConfig extends Config
 	@ConfigItem(
 		keyName = "repotTimer",
 		name = "Repot timer",
-		description = "Ticks until repotting is allowed, only updates when varb updates",
+		description = "Ticks until repotting is allowed",
 		position = 31,
 		section = overlaySection
 	)
