@@ -1,6 +1,6 @@
 # No Misclick Repot
 Inserts a no-op "Waiting..." option to the top of the menuoption of potion items when you are still under the effect of the potion.
-![img](https://i.imgur.com/SzGjNVB.gif)
+<img width="1042" height="642" alt="Image" src="https://github.com/user-attachments/assets/ed22832c-9d6e-418d-a0c7-bbd9b6c270ac" />
 Can still right click sip if needed, with customizable repot time (in ticks) when the menuoption is no longer deprioritized.
 Shift click drop will also still work, it is only if "Drink" or "Eat" is the top option.
 Reducing your stats to below the boost threshold will also allow you to left click drink again.
