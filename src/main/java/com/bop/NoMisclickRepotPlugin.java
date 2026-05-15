@@ -39,6 +39,8 @@ public class NoMisclickRepotPlugin extends Plugin
 	private static final String DRINK_OPTION = "Drink";
 	private static final String EAT_OPTION = "Eat";
 	private static final String NO_OP_OPTION = "Waiting...";
+	private static final int ANTIPOISON_TIMER_ID = -1;
+	private static final int ANTIVENOM_TIMER_ID = -2;
 
 	@Inject
 	private Client client;
@@ -161,6 +163,12 @@ public class NoMisclickRepotPlugin extends Plugin
 	@Subscribe
 	public void onVarbitChanged(VarbitChanged event)
 	{
+		if (event.getVarpId() == anti)
+		{
+			updatePoisonProtectionTimers(event.getValue());
+			return;
+		}
+
 		int varbitId = event.getVarbitId();
 
 		if (varbitId == divineBastion
@@ -306,20 +314,20 @@ public class NoMisclickRepotPlugin extends Plugin
 			return false;
 		}
 
-		int remainingTicks = getPoisonProtectionRemainingTicks(itemId, poisonValue);
+		int remainingTicks = getPoisonProtectionRemainingTicks(itemId);
 		return remainingTicks > config.timeLeft();
 	}
 
-	private int getPoisonProtectionRemainingTicks(int itemId, int poisonValue)
+	private int getPoisonProtectionRemainingTicks(int itemId)
 	{
 		if (venomPots.contains(itemId))
 		{
-			return Math.max(0, (-poisonValue - 38) * 30);
+			return getCachedRemainingTicks(ANTIVENOM_TIMER_ID, this::getLiveAntivenomProtectionRemainingTicks);
 		}
 
-		if (poisonPots.contains(itemId) && poisonValue < 0)
+		if (poisonPots.contains(itemId))
 		{
-			return -poisonValue * 30;
+			return getCachedRemainingTicks(ANTIPOISON_TIMER_ID, this::getLiveAntipoisonProtectionRemainingTicks);
 		}
 
 		return 0;
@@ -407,7 +415,7 @@ public class NoMisclickRepotPlugin extends Plugin
 
 		if (isProtectedAntipoison(itemId))
 		{
-			int remainingTicks = getPoisonProtectionRemainingTicks(itemId, client.getVarpValue(anti));
+			int remainingTicks = getPoisonProtectionRemainingTicks(itemId);
 			return new PotionOverlayState(getPotionGroup(itemId), ticksUntilAllowed(remainingTicks), getPotionDose(itemId));
 		}
 
@@ -496,6 +504,12 @@ public class NoMisclickRepotPlugin extends Plugin
 		timersUpdatedByVarbitThisTick.add(timerId);
 	}
 
+	private void updatePoisonProtectionTimers(int poisonValue)
+	{
+		updateTimerFromVarbit(ANTIPOISON_TIMER_ID, getLiveAntipoisonProtectionRemainingTicks(poisonValue));
+		updateTimerFromVarbit(ANTIVENOM_TIMER_ID, getLiveAntivenomProtectionRemainingTicks(poisonValue));
+	}
+
 	private int getCachedRemainingTicks(int varbitId)
 	{
 		return getCachedRemainingTicks(varbitId, () -> client.getVarbitValue(varbitId));
@@ -509,6 +523,26 @@ public class NoMisclickRepotPlugin extends Plugin
 	private int getLiveCoxEnhanceRemainingTicks()
 	{
 		return client.getVarbitValue(coxEnhance) * client.getVarbitValue(coxPrayerEnhanceRate);
+	}
+
+	private int getLiveAntipoisonProtectionRemainingTicks()
+	{
+		return getLiveAntipoisonProtectionRemainingTicks(client.getVarpValue(anti));
+	}
+
+	private int getLiveAntipoisonProtectionRemainingTicks(int poisonValue)
+	{
+		return Math.max(0, -poisonValue * 30);
+	}
+
+	private int getLiveAntivenomProtectionRemainingTicks()
+	{
+		return getLiveAntivenomProtectionRemainingTicks(client.getVarpValue(anti));
+	}
+
+	private int getLiveAntivenomProtectionRemainingTicks(int poisonValue)
+	{
+		return Math.max(0, (-poisonValue - 38) * 30);
 	}
 
 	private int ticksUntilAllowed(int remainingTicks)
