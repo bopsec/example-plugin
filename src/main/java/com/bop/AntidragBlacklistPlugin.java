@@ -123,7 +123,7 @@ public class AntidragBlacklistPlugin extends Plugin
 			case InterfaceID.BANKSIDE:
 			case InterfaceID.SHARED_BANK:
 			case InterfaceID.SHARED_BANK_SIDE:
-				applyBlacklistToBankContainers();
+				applyBlacklistToNonInventoryContainers();
 				break;
 			case InterfaceID.INVENTORY:
 				applyBlacklistToInventoryContainers();
@@ -143,13 +143,11 @@ public class AntidragBlacklistPlugin extends Plugin
 				applyBlacklistToScriptActiveWidget();
 				break;
 			case ScriptID.RAIDS_STORAGE_PRIVATE_ITEMS:
-				applyBlacklist(client.getWidget(InterfaceID.RaidsStoragePrivate.ITEMS));
+				applyBlacklistToNonInventoryContainer(client.getWidget(InterfaceID.RaidsStoragePrivate.ITEMS));
 				break;
 			case ScriptID.BANK_DEPOSITBOX_INIT:
-				applyBlacklistToBankContainers();
-				break;
 			case ScriptID.SEED_VAULT_BUILD:
-				applyBlacklistToSeedVault();
+				applyBlacklistToNonInventoryContainers();
 				break;
 			default:
 				break;
@@ -159,6 +157,11 @@ public class AntidragBlacklistPlugin extends Plugin
 	private void applyBlacklistToScriptActiveWidget()
 	{
 		Widget widget = client.getScriptActiveWidget();
+		if (config.inventoryOnly() && !isInventoryWidget(widget))
+		{
+			return;
+		}
+
 		if (isBlacklistedItem(widget))
 		{
 			resetDragDelay(widget);
@@ -168,8 +171,7 @@ public class AntidragBlacklistPlugin extends Plugin
 	private void applyBlacklistToKnownContainers()
 	{
 		applyBlacklistToInventoryContainers();
-		applyBlacklistToBankContainers();
-		applyBlacklistToSeedVault();
+		applyBlacklistToNonInventoryContainers();
 	}
 
 	private void applyBlacklistToInventoryContainers()
@@ -193,6 +195,27 @@ public class AntidragBlacklistPlugin extends Plugin
 	{
 		applyBlacklist(client.getWidget(InterfaceID.SeedVault.OBJ_LIST));
 		applyBlacklist(client.getWidget(InterfaceID.SeedVault.TEXT_LIST));
+	}
+
+	private void applyBlacklistToNonInventoryContainers()
+	{
+		if (config.inventoryOnly())
+		{
+			return;
+		}
+
+		applyBlacklistToBankContainers();
+		applyBlacklistToSeedVault();
+	}
+
+	private void applyBlacklistToNonInventoryContainer(Widget container)
+	{
+		if (config.inventoryOnly())
+		{
+			return;
+		}
+
+		applyBlacklist(container);
 	}
 
 	private void applyBlacklist(Widget container)
@@ -268,6 +291,27 @@ public class AntidragBlacklistPlugin extends Plugin
 	private boolean isBlacklistEmpty()
 	{
 		return blacklistedItemNamePatterns.isEmpty();
+	}
+
+	private static boolean isInventoryWidget(Widget widget)
+	{
+		if (widget == null)
+		{
+			return false;
+		}
+
+		if (isInventoryContainerId(widget.getId()) || isInventoryContainerId(widget.getParentId()))
+		{
+			return true;
+		}
+
+		Widget parent = widget.getParent();
+		return parent != null && isInventoryContainerId(parent.getId());
+	}
+
+	private static boolean isInventoryContainerId(int widgetId)
+	{
+		return widgetId == InterfaceID.Inventory.ITEMS || widgetId == InterfaceID.EquipmentSide.ITEMS;
 	}
 
 	private static List<Pattern> parseItemNamePatterns(String rawItemNames)

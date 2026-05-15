@@ -17,4 +17,15 @@ public interface AntidragBlacklistConfig extends Config
 	{
 		return "";
 	}
+
+	@ConfigItem(
+		keyName = "inventoryOnly",
+		name = "Inventory only",
+		description = "Only apply the blacklist to inventory widgets, ignoring bank and other item containers.",
+		position = 2
+	)
+	default boolean inventoryOnly()
+	{
+		return false;
+	}
 }
