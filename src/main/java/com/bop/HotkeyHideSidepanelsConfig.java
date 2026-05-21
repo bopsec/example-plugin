@@ -18,4 +18,15 @@ public interface HotkeyHideSidepanelsConfig extends Config
 	{
 		return Keybind.NOT_SET;
 	}
+
+	@ConfigItem(
+		keyName = "respectPressEnterToChat",
+		name = "Respect Press Enter to Chat",
+		description = "Prevents the hotkey from firing while typing with RuneLite's Key Remapping plugin.",
+		position = 1
+	)
+	default boolean respectPressEnterToChat()
+	{
+		return true;
+	}
 }
