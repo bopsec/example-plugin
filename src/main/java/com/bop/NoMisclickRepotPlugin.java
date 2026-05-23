@@ -98,6 +98,24 @@ public class NoMisclickRepotPlugin extends Plugin
 	List<Integer> prayerRegenPots = List.of(ItemID._4DOSE1PRAYER_REGENERATION, ItemID._3DOSE1PRAYER_REGENERATION, ItemID._2DOSE1PRAYER_REGENERATION, ItemID._1DOSE1PRAYER_REGENERATION);
 
 	/*
+	Antifire / Super antifire
+	 */
+	int antifire = VarbitID.ANTIFIRE_POTION;
+	int superAntifire = VarbitID.SUPER_ANTIFIRE_POTION;
+	List<Integer> antifirePots = List.of(
+		ItemID._4DOSE1ANTIDRAGON, ItemID._3DOSE1ANTIDRAGON, ItemID._2DOSE1ANTIDRAGON, ItemID._1DOSE1ANTIDRAGON,
+		ItemID.BRUTAL_2DOSE1ANTIDRAGON, ItemID.BRUTAL_1DOSE1ANTIDRAGON,
+		ItemID._4DOSE2ANTIDRAGON, ItemID._3DOSE2ANTIDRAGON, ItemID._2DOSE2ANTIDRAGON, ItemID._1DOSE2ANTIDRAGON,
+		ItemID.BRUTAL_2DOSE2ANTIDRAGON, ItemID.BRUTAL_1DOSE2ANTIDRAGON
+	);
+	List<Integer> superAntifirePots = List.of(
+		ItemID._4DOSE3ANTIDRAGON, ItemID._3DOSE3ANTIDRAGON, ItemID._2DOSE3ANTIDRAGON, ItemID._1DOSE3ANTIDRAGON,
+		ItemID.BRUTAL_2DOSE3ANTIDRAGON, ItemID.BRUTAL_1DOSE3ANTIDRAGON,
+		ItemID._4DOSE4ANTIDRAGON, ItemID._3DOSE4ANTIDRAGON, ItemID._2DOSE4ANTIDRAGON, ItemID._1DOSE4ANTIDRAGON,
+		ItemID.BRUTAL_2DOSE4ANTIDRAGON, ItemID.BRUTAL_1DOSE4ANTIDRAGON
+	);
+
+	/*
 	Goading potion
 	 */
 	int goading = VarbitID.GOADING_POTION_TIMER;
@@ -180,6 +198,18 @@ public class NoMisclickRepotPlugin extends Plugin
 			|| varbitId == toaLiquidAdrenaline)
 		{
 			updateTimerFromVarbit(varbitId, client.getVarbitValue(varbitId));
+			return;
+		}
+
+		if (varbitId == antifire)
+		{
+			updateTimerFromVarbit(antifire, client.getVarbitValue(antifire) * 30);
+			return;
+		}
+
+		if (varbitId == superAntifire)
+		{
+			updateTimerFromVarbit(superAntifire, client.getVarbitValue(superAntifire) * 20);
 			return;
 		}
 
@@ -288,6 +318,11 @@ public class NoMisclickRepotPlugin extends Plugin
 
 		int remainingTicks = getCachedRemainingTicks(goading, () -> client.getVarbitValue(goading) * 6);
 		return goadingPots.contains(itemId) && remainingTicks > config.timeLeft();
+	}
+
+	private boolean isActiveAntifire(int itemId)
+	{
+		return config.antifire() && getAntifireRemainingTicks(itemId) > config.timeLeft();
 	}
 
 	private boolean isProtectedAntipoison(int itemId)
@@ -413,6 +448,11 @@ public class NoMisclickRepotPlugin extends Plugin
 			return new PotionOverlayState(PotionGroup.GOADING, ticksUntilAllowed(getCachedRemainingTicks(goading, () -> client.getVarbitValue(goading) * 6)), getPotionDose(itemId));
 		}
 
+		if (isActiveAntifire(itemId))
+		{
+			return new PotionOverlayState(getPotionGroup(itemId), ticksUntilAllowed(getAntifireRemainingTicks(itemId)), getPotionDose(itemId));
+		}
+
 		if (isProtectedAntipoison(itemId))
 		{
 			int remainingTicks = getPoisonProtectionRemainingTicks(itemId);
@@ -469,6 +509,23 @@ public class NoMisclickRepotPlugin extends Plugin
 		}
 
 		return selectedSlot == -1 || selectedSlot == itemSlot;
+	}
+
+	private int getAntifireRemainingTicks(int itemId)
+	{
+		int superAntifireRemainingTicks = getCachedRemainingTicks(superAntifire, () -> client.getVarbitValue(superAntifire) * 20);
+		if (superAntifirePots.contains(itemId))
+		{
+			return superAntifireRemainingTicks;
+		}
+
+		if (antifirePots.contains(itemId))
+		{
+			int antifireRemainingTicks = getCachedRemainingTicks(antifire, () -> client.getVarbitValue(antifire) * 30);
+			return Math.max(antifireRemainingTicks, superAntifireRemainingTicks);
+		}
+
+		return 0;
 	}
 
 	private int getDivineRemainingTicks(int itemId)
@@ -597,6 +654,16 @@ public class NoMisclickRepotPlugin extends Plugin
 			return PotionGroup.ANTIPOISON;
 		}
 
+		if (superAntifirePots.contains(itemId))
+		{
+			return PotionGroup.SUPER_ANTIFIRE;
+		}
+
+		if (antifirePots.contains(itemId))
+		{
+			return PotionGroup.ANTIFIRE;
+		}
+
 		return PotionGroup.UNKNOWN;
 	}
 
@@ -632,6 +699,8 @@ public class NoMisclickRepotPlugin extends Plugin
 		SUPER_COMBAT,
 		PRAYER_REGEN,
 		GOADING,
+		ANTIFIRE,
+		SUPER_ANTIFIRE,
 		ANTIPOISON,
 		ANTIVENOM,
 		COX_OVERLOAD,

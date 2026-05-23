@@ -158,10 +158,22 @@ public interface NoMisclickRepotConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "antifire",
+		name = "Antifire",
+		description = "Enable for antifire and super antifire potions",
+		position = 11,
+		section = potionsSection
+	)
+	default boolean antifire()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 		keyName = "prayerRegen",
 		name = "Prayer regen",
 		description = "Enable for prayer regeneration potions",
-		position = 11,
+		position = 12,
 		section = potionsSection
 	)
 	default boolean prayerRegen()
@@ -173,7 +185,7 @@ public interface NoMisclickRepotConfig extends Config
 		keyName = "goading",
 		name = "Goading",
 		description = "Enable for goading potions",
-		position = 12,
+		position = 13,
 		section = potionsSection
 	)
 	default boolean goading()
