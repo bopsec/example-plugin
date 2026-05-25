@@ -41,6 +41,7 @@ public class NoMisclickRepotPlugin extends Plugin
 	private static final String NO_OP_OPTION = "Waiting...";
 	private static final int ANTIPOISON_TIMER_ID = -1;
 	private static final int ANTIVENOM_TIMER_ID = -2;
+	private static final int TOA_LIQUID_ADRENALINE_TICKS = 250;
 
 	@Inject
 	private Client client;
@@ -193,11 +194,15 @@ public class NoMisclickRepotPlugin extends Plugin
 			|| varbitId == divineRanging
 			|| varbitId == divineScb
 			|| varbitId == divineStr
-			|| varbitId == divineAtk
-			|| varbitId == coxOverload
-			|| varbitId == toaLiquidAdrenaline)
+			|| varbitId == divineAtk)
 		{
 			updateTimerFromVarbit(varbitId, client.getVarbitValue(varbitId));
+			return;
+		}
+
+		if (varbitId == coxOverload)
+		{
+			updateTimerFromVarbit(coxOverload, client.getVarbitValue(coxOverload) * 25);
 			return;
 		}
 
@@ -234,6 +239,12 @@ public class NoMisclickRepotPlugin extends Plugin
 		if (varbitId == toaOverload)
 		{
 			updateTimerFromVarbit(toaOverload, client.getVarbitValue(toaOverload) * 25);
+			return;
+		}
+
+		if (varbitId == toaLiquidAdrenaline)
+		{
+			updateTimerFromVarbit(toaLiquidAdrenaline, getLiveToaLiquidAdrenalineRemainingTicks());
 		}
 	}
 
@@ -370,7 +381,8 @@ public class NoMisclickRepotPlugin extends Plugin
 
 	private boolean isActiveCoxOverload(int itemId)
 	{
-		return coxOverloadPots.contains(itemId) && getCachedRemainingTicks(coxOverload) > 0;
+		int remainingTicks = getCachedRemainingTicks(coxOverload, () -> client.getVarbitValue(coxOverload) * 25);
+		return coxOverloadPots.contains(itemId) && remainingTicks > 0;
 	}
 
 	private boolean isActiveCoxPrayerEnhanceEffect(int itemId)
@@ -383,6 +395,12 @@ public class NoMisclickRepotPlugin extends Plugin
 	{
 		int remainingTicks = getCachedRemainingTicks(toaOverload, () -> client.getVarbitValue(toaOverload) * 25);
 		return toaOverloadPots.contains(itemId) && remainingTicks > config.timeLeft();
+	}
+
+	private boolean isActiveToaLiquidAdrenalineEffect(int itemId)
+	{
+		int remainingTicks = getCachedRemainingTicks(toaLiquidAdrenaline, this::getLiveToaLiquidAdrenalineRemainingTicks);
+		return toaLiquidAdrenalinePots.contains(itemId) && remainingTicks > config.timeLeft();
 	}
 
 	private MenuEntry[] insertNoOpEntry(MenuEntry[] menuEntries)
@@ -474,9 +492,9 @@ public class NoMisclickRepotPlugin extends Plugin
 			return new PotionOverlayState(PotionGroup.TOA_SALT, ticksUntilAllowed(getCachedRemainingTicks(toaOverload, () -> client.getVarbitValue(toaOverload) * 25)), getPotionDose(itemId));
 		}
 
-		if (config.toaLiquidAdren() && isActiveTimedEffect(itemId, toaLiquidAdrenalinePots, toaLiquidAdrenaline))
+		if (config.toaLiquidAdren() && isActiveToaLiquidAdrenalineEffect(itemId))
 		{
-			return new PotionOverlayState(PotionGroup.TOA_LIQUID_ADRENALINE, ticksUntilAllowed(getCachedRemainingTicks(toaLiquidAdrenaline)), getPotionDose(itemId));
+			return new PotionOverlayState(PotionGroup.TOA_LIQUID_ADRENALINE, ticksUntilAllowed(getCachedRemainingTicks(toaLiquidAdrenaline, this::getLiveToaLiquidAdrenalineRemainingTicks)), getPotionDose(itemId));
 		}
 
 		return null;
@@ -580,6 +598,11 @@ public class NoMisclickRepotPlugin extends Plugin
 	private int getLiveCoxEnhanceRemainingTicks()
 	{
 		return client.getVarbitValue(coxEnhance) * client.getVarbitValue(coxPrayerEnhanceRate);
+	}
+
+	private int getLiveToaLiquidAdrenalineRemainingTicks()
+	{
+		return client.getVarbitValue(toaLiquidAdrenaline) > 0 ? TOA_LIQUID_ADRENALINE_TICKS : 0;
 	}
 
 	private int getLiveAntipoisonProtectionRemainingTicks()
