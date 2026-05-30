@@ -1,5 +1,5 @@
 # Tzhaar / Colo Additions
-Mostly just removing pillars and bloat outside the arenas of inferno and colosseum
+For now, mostly just hiding pillars and bloat outside the arenas of inferno and colosseum
 
 Runey players when they get a plugin to hide the fabric of reality and end up drifting in nothingness:
 ![](https://i.imgur.com/nzw7UgE.png)
