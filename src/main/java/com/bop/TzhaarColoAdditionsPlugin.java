@@ -39,8 +39,8 @@ import java.util.Objects;
 import java.util.Set;
 
 @PluginDescriptor(
-	name = "TzHaar/Colosseum Additions",
-	description = "Hides Inferno and Colosseum pillars",
+	name = "Inferno/Colo Additions",
+	description = "General QoL for Inferno and Colosseum",
 	tags = {"inferno", "colosseum", "pillar", "hide"}
 )
 public class TzhaarColoAdditionsPlugin extends Plugin
@@ -567,16 +567,11 @@ public class TzhaarColoAdditionsPlugin extends Plugin
 	}
 
 	@Subscribe
-	public void onGameTick(GameTick gameTick)
-	{
-	}
-
-	@Subscribe
 	public void onConfigChanged(ConfigChanged configChanged)
 	{
 		if ("TzhaarColoAdditions".equals(configChanged.getGroup()))
 		{
-			if ("markPillarTiles".equals(configChanged.getKey()))
+			if ("markPillarTiles".equals(configChanged.getKey()) || "pillarTileColor".equals(configChanged.getKey()))
 			{
 				return;
 			}
