@@ -33,6 +33,7 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
@@ -45,6 +46,8 @@ import java.util.Set;
 )
 public class TzhaarColoAdditionsPlugin extends Plugin
 {
+	private static final int COLOSSEUM_REGION_ID = 7216;
+
 	private static final Set<Integer> INFERNO_PILLARS_TO_MARK = Set.of(
 		ObjectID.INFERNO_SAFESPOT_100,
 		ObjectID.INFERNO_SAFESPOT_75,
@@ -666,7 +669,7 @@ public class TzhaarColoAdditionsPlugin extends Plugin
 		}
 
 		if (tileObject instanceof GameObject
-			&& (INFERNO_PILLARS_TO_MARK.contains(tileObject.getId()) || isInInstance() && COLOSSEUM_PILLARS.contains(tileObject.getId())))
+			&& (INFERNO_PILLARS_TO_MARK.contains(tileObject.getId()) || isInColosseumRegion() && COLOSSEUM_PILLARS.contains(tileObject.getId())))
 		{
 			markPillarTiles((GameObject) tileObject);
 		}
@@ -690,9 +693,9 @@ public class TzhaarColoAdditionsPlugin extends Plugin
 	private boolean shouldHide(int objectId)
 	{
 		return config.hideInfernoPillars() && INFERNO_OBJECTS_TO_HIDE.contains(objectId)
-			|| config.hideColosseumPillars() && isInInstance() && COLOSSEUM_PILLARS.contains(objectId)
+			|| config.hideColosseumPillars() && isInColosseumRegion() && COLOSSEUM_PILLARS.contains(objectId)
 			|| config.hideInfernoOuterScene() && inInfernoScene && shouldHideInfernoOuterObject(objectId)
-			|| config.hideColosseumOuterScene() && isInInstance() && COLOSSEUM_OUTER_SCENERY.contains(objectId);
+			|| config.hideColosseumOuterScene() && isInColosseumRegion() && COLOSSEUM_OUTER_SCENERY.contains(objectId);
 	}
 
 	Set<PillarTile> getPillarTiles()
@@ -796,6 +799,11 @@ public class TzhaarColoAdditionsPlugin extends Plugin
 	private boolean isInInstance()
 	{
 		return client.getTopLevelWorldView().isInstance();
+	}
+
+	private boolean isInColosseumRegion()
+	{
+		return isInInstance() && Arrays.stream(client.getMapRegions()).anyMatch(region -> region == COLOSSEUM_REGION_ID);
 	}
 
 	private boolean isHideConfig(String key)
