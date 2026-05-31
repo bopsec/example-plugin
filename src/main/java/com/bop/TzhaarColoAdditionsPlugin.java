@@ -40,9 +40,9 @@ import java.util.Objects;
 import java.util.Set;
 
 @PluginDescriptor(
-	name = "Inferno/Colo Additions",
+	name = "Tzhaar/Colo Additions",
 	description = "General QoL for Inferno and Colosseum",
-	tags = {"inferno", "colosseum", "pillar", "hide"}
+	tags = {"inferno", "colosseum", "pillar", "hide", "tzhaar"}
 )
 public class TzhaarColoAdditionsPlugin extends Plugin
 {
