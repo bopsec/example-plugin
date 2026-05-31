@@ -443,6 +443,8 @@ public class TzhaarColoAdditionsPlugin extends Plugin
 	private final Set<PillarArea> infernoPillarAreas = new HashSet<>();
 	private boolean inInfernoScene;
 	private boolean removedGameObjects;
+	private boolean refreshedColosseumScene;
+	private boolean refreshingColosseumScene;
 
 	private final RenderCallback renderCallback = new RenderCallback()
 	{
@@ -503,7 +505,16 @@ public class TzhaarColoAdditionsPlugin extends Plugin
 	public void onNpcSpawned(NpcSpawned npcSpawned)
 	{
 		int npcId = npcSpawned.getNpc().getId();
-		if (npcId == NpcID.COLOSSEUM_BOSS_SEATED) {
+		if (npcId == NpcID.COLOSSEUM_BOSS_SEATED)
+		{
+			if ((config.hideColosseumPillars() || config.hideColosseumOuterScene()) && !refreshedColosseumScene)
+			{
+				refreshedColosseumScene = true;
+				refreshingColosseumScene = true;
+				reloadScene();
+				return;
+			}
+
 			reloadSceneIfNeeded();
 		}
 	}
@@ -518,10 +529,16 @@ public class TzhaarColoAdditionsPlugin extends Plugin
 			infernoPillarAreas.clear();
 			inInfernoScene = false;
 			removedGameObjects = false;
+
+			if (!refreshingColosseumScene)
+			{
+				refreshedColosseumScene = false;
+			}
 		}
 
 		if (gameStateChanged.getGameState() == GameState.LOGGED_IN)
 		{
+			refreshingColosseumScene = false;
 			scanLoadedScene();
 		}
 	}
@@ -581,7 +598,14 @@ public class TzhaarColoAdditionsPlugin extends Plugin
 				scanLoadedScene();
 				if (isHideConfig(configChanged.getKey()))
 				{
-					reloadSceneIfNeeded();
+					if (shouldReloadScene(configChanged.getKey()))
+					{
+						reloadScene();
+					}
+					else
+					{
+						reloadSceneIfNeeded();
+					}
 				}
 			});
 		}
@@ -780,6 +804,12 @@ public class TzhaarColoAdditionsPlugin extends Plugin
 			|| "hideColosseumPillars".equals(key)
 			|| "hideInfernoOuterScene".equals(key)
 			|| "hideColosseumOuterScene".equals(key);
+	}
+
+	private boolean shouldReloadScene(String key)
+	{
+		return "hideInfernoPillars".equals(key)
+			|| "hideColosseumPillars".equals(key);
 	}
 
 	private void reloadSceneIfNeeded()
