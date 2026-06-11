@@ -63,10 +63,10 @@ public interface TzhaarColoAdditionsConfig extends Config
 	default Color pillarTileColor()
 	{
 		return new Color(
-			Color.DARK_GRAY.getRed(),
-			Color.DARK_GRAY.getBlue(),
-			Color.DARK_GRAY.getGreen(),
-			100);
+			40,
+			40,
+			40,
+			150);
 	}
 
 	@ConfigItem(
