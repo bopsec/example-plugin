@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Polygon;
+import java.awt.Stroke;
 import javax.inject.Inject;
 import net.runelite.api.Client;
 import net.runelite.api.Perspective;
@@ -14,6 +15,9 @@ import net.runelite.client.ui.overlay.OverlayUtil;
 
 class TzhaarColoAdditionsOverlay extends Overlay
 {
+	private static final int TILE_FILL_ALPHA = 40;
+	private static final float LINE_STROKE_WIDTH = 2f;
+
 	private final Client client;
 	private final TzhaarColoAdditionsConfig config;
 	private final TzhaarColoAdditionsPlugin plugin;
@@ -37,28 +41,57 @@ class TzhaarColoAdditionsOverlay extends Overlay
 			return null;
 		}
 
-		Color baseColor = config.pillarTileColor();
-		Color tileColor = new Color(
-			baseColor.getRed(),
-			baseColor.getGreen(),
-			baseColor.getBlue(),
-			baseColor.getAlpha()
-		);
+		Color markerColor = config.pillarTileColor();
+		PillarMarkerStyle markerStyle = config.pillarMarkerStyle();
 
-		for (TzhaarColoAdditionsPlugin.PillarTile pillarTile : plugin.getPillarTiles())
+		for (TzhaarColoAdditionsPlugin.PillarArea pillarArea : plugin.getPillarAreas())
 		{
-			if (pillarTile.getPlane() != client.getPlane())
+			if (pillarArea.getPlane() != client.getPlane())
 			{
 				continue;
 			}
 
-			Polygon tilePoly = Perspective.getCanvasTilePoly(client, pillarTile.getLocalPoint());
-			if (tilePoly != null)
+			Polygon areaPoly = Perspective.getCanvasTileAreaPoly(
+				client,
+				pillarArea.getCenterLocalPoint(client.getTopLevelWorldView().getScene()),
+				pillarArea.getSizeX(),
+				pillarArea.getSizeY(),
+				pillarArea.getPlane(),
+				0
+			);
+			if (areaPoly != null)
 			{
-				OverlayUtil.renderPolygon(graphics, tilePoly, tileColor);
+				renderMarker(graphics, areaPoly, markerColor, markerStyle);
 			}
 		}
 
 		return null;
+	}
+
+	private void renderMarker(Graphics2D graphics, Polygon tilePoly, Color color, PillarMarkerStyle markerStyle)
+	{
+		switch (markerStyle)
+		{
+			case TILE_FILL:
+				graphics.setColor(withAlpha(color, Math.max(color.getAlpha(), TILE_FILL_ALPHA)));
+				graphics.fillPolygon(tilePoly);
+				break;
+			case LINE:
+				Stroke originalStroke = graphics.getStroke();
+				graphics.setColor(color);
+				graphics.setStroke(new java.awt.BasicStroke(LINE_STROKE_WIDTH));
+				graphics.drawPolygon(tilePoly);
+				graphics.setStroke(originalStroke);
+				break;
+			case BORDERED_TILE:
+			default:
+				OverlayUtil.renderPolygon(graphics, tilePoly, color);
+				break;
+		}
+	}
+
+	private static Color withAlpha(Color color, int alpha)
+	{
+		return new Color(color.getRed(), color.getGreen(), color.getBlue(), Math.min(alpha, 255));
 	}
 }

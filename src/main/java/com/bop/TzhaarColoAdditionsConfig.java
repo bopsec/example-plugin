@@ -42,16 +42,31 @@ public interface TzhaarColoAdditionsConfig extends Config
 		return true;
 	}
 
+	@ConfigItem(
+		keyName = "pillarMarkerStyle",
+		name = "Pillar marker style",
+		description = "Choose how hidden pillar tiles are marked",
+		position = 3
+	)
+	default PillarMarkerStyle pillarMarkerStyle()
+	{
+		return PillarMarkerStyle.BORDERED_TILE;
+	}
+
 	@Alpha
 	@ConfigItem(
 		keyName = "pillarTileColor",
 		name = "Pillar tile colour",
 		description = "The colour used to highlight tiles underneath hidden pillars",
-		position = 3
+		position = 4
 	)
 	default Color pillarTileColor()
 	{
-		return Color.CYAN;
+		return new Color(
+			Color.DARK_GRAY.getRed(),
+			Color.DARK_GRAY.getBlue(),
+			Color.DARK_GRAY.getGreen(),
+			100);
 	}
 
 	@ConfigItem(

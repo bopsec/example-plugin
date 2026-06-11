@@ -6,13 +6,13 @@ import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.GameObject;
 import net.runelite.api.GraphicsObject;
+import net.runelite.api.Perspective;
 import net.runelite.api.Renderable;
 import net.runelite.api.Scene;
 import net.runelite.api.Tile;
 import net.runelite.api.TileObject;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.events.DecorativeObjectSpawned;
-import net.runelite.api.events.GameTick;
 import net.runelite.api.events.GameObjectDespawned;
 import net.runelite.api.events.GameObjectSpawned;
 import net.runelite.api.events.GameStateChanged;
@@ -442,7 +442,7 @@ public class TzhaarColoAdditionsPlugin extends Plugin
 	@Inject
 	private ClientThread clientThread;
 
-	private final Set<PillarTile> pillarTiles = new HashSet<>();
+	private final Set<PillarArea> pillarAreas = new HashSet<>();
 	private final Set<PillarArea> infernoPillarAreas = new HashSet<>();
 	private boolean inInfernoScene;
 	private boolean removedGameObjects;
@@ -499,7 +499,8 @@ public class TzhaarColoAdditionsPlugin extends Plugin
 	{
 		renderCallbackManager.unregister(renderCallback);
 		overlayManager.remove(overlay);
-		pillarTiles.clear();
+		pillarAreas.clear();
+		infernoPillarAreas.clear();
 		inInfernoScene = false;
 		reloadSceneIfNeeded();
 	}
@@ -528,7 +529,7 @@ public class TzhaarColoAdditionsPlugin extends Plugin
 		if (gameStateChanged.getGameState() == GameState.LOADING
 			|| gameStateChanged.getGameState() == GameState.LOGIN_SCREEN)
 		{
-			pillarTiles.clear();
+			pillarAreas.clear();
 			infernoPillarAreas.clear();
 			inInfernoScene = false;
 			removedGameObjects = false;
@@ -591,7 +592,9 @@ public class TzhaarColoAdditionsPlugin extends Plugin
 	{
 		if ("TzhaarColoAdditions".equals(configChanged.getGroup()))
 		{
-			if ("markPillarTiles".equals(configChanged.getKey()) || "pillarTileColor".equals(configChanged.getKey()))
+			if ("markPillarTiles".equals(configChanged.getKey())
+				|| "pillarMarkerStyle".equals(configChanged.getKey())
+				|| "pillarTileColor".equals(configChanged.getKey()))
 			{
 				return;
 			}
@@ -624,7 +627,7 @@ public class TzhaarColoAdditionsPlugin extends Plugin
 		Scene scene = client.getTopLevelWorldView().getScene();
 		Tile[][][] tiles = scene.getTiles();
 		inInfernoScene = false;
-		pillarTiles.clear();
+		pillarAreas.clear();
 		infernoPillarAreas.clear();
 
 		scanTiles(tiles);
@@ -698,9 +701,9 @@ public class TzhaarColoAdditionsPlugin extends Plugin
 			|| config.hideColosseumOuterScene() && isInColosseumRegion() && COLOSSEUM_OUTER_SCENERY.contains(objectId);
 	}
 
-	Set<PillarTile> getPillarTiles()
+	Set<PillarArea> getPillarAreas()
 	{
-		return Collections.unmodifiableSet(pillarTiles);
+		return Collections.unmodifiableSet(pillarAreas);
 	}
 
 	private void markPillarTiles(GameObject gameObject)
@@ -711,17 +714,11 @@ public class TzhaarColoAdditionsPlugin extends Plugin
 		int maxSceneX = gameObject.getSceneMaxLocation().getX();
 		int maxSceneY = gameObject.getSceneMaxLocation().getY();
 
+		pillarAreas.add(new PillarArea(plane, minSceneX, minSceneY, maxSceneX, maxSceneY));
+
 		if (INFERNO_PILLARS_TO_MARK.contains(gameObject.getId()))
 		{
 			infernoPillarAreas.add(new PillarArea(plane, minSceneX, minSceneY, maxSceneX, maxSceneY));
-		}
-
-		for (int sceneX = minSceneX; sceneX <= maxSceneX; sceneX++)
-		{
-			for (int sceneY = minSceneY; sceneY <= maxSceneY; sceneY++)
-			{
-				pillarTiles.add(new PillarTile(LocalPoint.fromScene(sceneX, sceneY, client.getTopLevelWorldView().getScene()), plane));
-			}
 		}
 	}
 
@@ -765,7 +762,7 @@ public class TzhaarColoAdditionsPlugin extends Plugin
 
 	private void removePillarTileMarkers(PillarArea pillarArea)
 	{
-		pillarTiles.removeIf(pillarArea::contains);
+		pillarAreas.remove(pillarArea);
 	}
 
 	private boolean isInfernoSceneObject(int objectId)
@@ -842,50 +839,7 @@ public class TzhaarColoAdditionsPlugin extends Plugin
 		});
 	}
 
-	static final class PillarTile
-	{
-		private final LocalPoint localPoint;
-		private final int plane;
-
-		private PillarTile(LocalPoint localPoint, int plane)
-		{
-			this.localPoint = localPoint;
-			this.plane = plane;
-		}
-
-		LocalPoint getLocalPoint()
-		{
-			return localPoint;
-		}
-
-		int getPlane()
-		{
-			return plane;
-		}
-
-		@Override
-		public boolean equals(Object o)
-		{
-			if (this == o)
-			{
-				return true;
-			}
-			if (!(o instanceof PillarTile))
-			{
-				return false;
-			}
-			PillarTile that = (PillarTile) o;
-			return plane == that.plane && Objects.equals(localPoint, that.localPoint);
-		}
-
-		@Override
-		public int hashCode()
-		{
-			return Objects.hash(localPoint, plane);
-		}
-	}
-
-	private static final class PillarArea
+	static final class PillarArea
 	{
 		private final int plane;
 		private final int minSceneX;
@@ -911,13 +865,27 @@ public class TzhaarColoAdditionsPlugin extends Plugin
 			return dx * dx + dy * dy;
 		}
 
-		private boolean contains(PillarTile pillarTile)
+		int getPlane()
 		{
-			return pillarTile.plane == plane
-				&& pillarTile.localPoint.getSceneX() >= minSceneX
-				&& pillarTile.localPoint.getSceneX() <= maxSceneX
-				&& pillarTile.localPoint.getSceneY() >= minSceneY
-				&& pillarTile.localPoint.getSceneY() <= maxSceneY;
+			return plane;
+		}
+
+		LocalPoint getCenterLocalPoint(Scene scene)
+		{
+			int sizeX = getSizeX();
+			int sizeY = getSizeY();
+			return LocalPoint.fromScene(minSceneX, minSceneY, scene)
+				.plus(((sizeX - 1) * Perspective.LOCAL_TILE_SIZE) / 2, ((sizeY - 1) * Perspective.LOCAL_TILE_SIZE) / 2);
+		}
+
+		int getSizeX()
+		{
+			return maxSceneX - minSceneX + 1;
+		}
+
+		int getSizeY()
+		{
+			return maxSceneY - minSceneY + 1;
 		}
 
 		@Override
