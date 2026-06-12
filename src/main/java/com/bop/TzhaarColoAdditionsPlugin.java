@@ -68,23 +68,6 @@ public class TzhaarColoAdditionsPlugin extends Plugin
 		ObjectID.INFERNO_SAFESPOT3
 	);
 
-	private static final Set<Integer> INFERNO_PILLARS_TO_RENDER_HIDE_ONLY = Set.of(
-		ObjectID.INFERNO_SAFESPOT_100,
-		ObjectID.INFERNO_SAFESPOT_75,
-		ObjectID.INFERNO_SAFESPOT_50,
-		ObjectID.INFERNO_SAFESPOT_25,
-		ObjectID.INFERNO_SAFESPOT1,
-		ObjectID.INFERNO_SAFESPOT2,
-		ObjectID.INFERNO_SAFESPOT3,
-		ObjectID.INFERNO_COLLAPSING_WALL_SAFESPOT_STATE1,
-		ObjectID.INFERNO_COLLAPSING_WALL_SIDE_RIGHT_STATE1,
-		ObjectID.INFERNO_COLLAPSING_WALL_SIDE_LEFT_STATE1,
-		ObjectID.INFERNO_COLLAPSING_WALL_SIDE_RIGHT_STATE2,
-		ObjectID.INFERNO_COLLAPSING_WALL_SIDE_LEFT_STATE2,
-		ObjectID.INFERNO_COLLAPSING_WALL_SIDE_RIGHT_STATE3,
-		ObjectID.INFERNO_COLLAPSING_WALL_SIDE_LEFT_STATE3
-	);
-
 	private static final Set<Integer> INFERNO_PILLAR_DEATH_OBJECTS = Set.of(
 		ObjectID.INFERNO_COLLAPSING_WALL_SAFESPOT_STATE1,
 		ObjectID.INFERNO_COLLAPSING_WALL_SIDE_RIGHT_STATE1,
@@ -445,7 +428,6 @@ public class TzhaarColoAdditionsPlugin extends Plugin
 	private final Set<PillarArea> pillarAreas = new HashSet<>();
 	private final Set<PillarArea> infernoPillarAreas = new HashSet<>();
 	private boolean inInfernoScene;
-	private boolean removedGameObjects;
 	private boolean refreshedColosseumScene;
 	private boolean refreshingColosseumScene;
 
@@ -487,11 +469,7 @@ public class TzhaarColoAdditionsPlugin extends Plugin
 	{
 		overlayManager.add(overlay);
 		renderCallbackManager.register(renderCallback);
-		clientThread.invoke(() ->
-		{
-			scanLoadedScene();
-			reloadSceneIfNeeded();
-		});
+		clientThread.invoke(this::scanLoadedScene);
 	}
 
 	@Override
@@ -502,7 +480,6 @@ public class TzhaarColoAdditionsPlugin extends Plugin
 		pillarAreas.clear();
 		infernoPillarAreas.clear();
 		inInfernoScene = false;
-		reloadSceneIfNeeded();
 	}
 
 	@Subscribe
@@ -513,13 +490,11 @@ public class TzhaarColoAdditionsPlugin extends Plugin
 		{
 			if ((config.hideColosseumPillars() || config.hideColosseumOuterScene()) && !refreshedColosseumScene)
 			{
+				// This is just because there's no "Loading" upon entering, and I only want to do this inside the instance.
 				refreshedColosseumScene = true;
 				refreshingColosseumScene = true;
 				reloadScene();
-				return;
 			}
-
-			reloadSceneIfNeeded();
 		}
 	}
 
@@ -532,7 +507,6 @@ public class TzhaarColoAdditionsPlugin extends Plugin
 			pillarAreas.clear();
 			infernoPillarAreas.clear();
 			inInfernoScene = false;
-			removedGameObjects = false;
 
 			if (!refreshingColosseumScene)
 			{
@@ -608,10 +582,6 @@ public class TzhaarColoAdditionsPlugin extends Plugin
 					{
 						reloadScene();
 					}
-					else
-					{
-						reloadSceneIfNeeded();
-					}
 				}
 			});
 		}
@@ -682,15 +652,6 @@ public class TzhaarColoAdditionsPlugin extends Plugin
 			removeNearestPillarTileMarkers((GameObject) tileObject);
 		}
 
-		if (tileObject instanceof GameObject
-			&& shouldHide(tileObject.getId())
-			&& !INFERNO_PILLARS_TO_RENDER_HIDE_ONLY.contains(tileObject.getId())
-			&& !COLOSSEUM_PILLARS.contains(tileObject.getId()))
-		{
-			GameObject gameObject = (GameObject) tileObject;
-			client.getTopLevelWorldView().getScene().removeGameObject(gameObject);
-			removedGameObjects = true;
-		}
 	}
 
 	private boolean shouldHide(int objectId)
@@ -814,18 +775,9 @@ public class TzhaarColoAdditionsPlugin extends Plugin
 	private boolean shouldReloadScene(String key)
 	{
 		return "hideInfernoPillars".equals(key)
-			|| "hideColosseumPillars".equals(key);
-	}
-
-	private void reloadSceneIfNeeded()
-	{
-		if (!removedGameObjects)
-		{
-			return;
-		}
-
-		removedGameObjects = false;
-		reloadScene();
+			|| "hideColosseumPillars".equals(key)
+			|| "hideInfernoOuterScene".equals(key)
+			|| "hideColosseumOuterScene".equals(key);
 	}
 
 	private void reloadScene()
