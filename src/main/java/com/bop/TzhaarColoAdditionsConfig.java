@@ -70,23 +70,23 @@ public interface TzhaarColoAdditionsConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "hideInfernoOuterScene",
-		name = "Hide Inferno outer scenery",
-		description = "Hides scenery and graphics objects outside the inferred Inferno arena. The Ancestral Glyph NPC is not hidden.",
+		keyName = "hideInfernoOuterScene2",
+		name = "Hide Inferno scenery",
+		description = "Hides scenery and graphics objects outside the Inferno Arena. CAN BE BUGGY!",
 		position = 5
 	)
-	default boolean hideInfernoOuterScene()
+	default boolean hideInfernoOuterScene2()
 	{
 		return false;
 	}
 
 	@ConfigItem(
-		keyName = "hideColosseumOuterScene",
-		name = "Hide Colosseum outer scenery",
-		description = "Hides selected scenery outside the Fortis Colosseum arena",
+		keyName = "hideColosseumOuterScene2",
+		name = "Hide Colosseum scenery",
+		description = "Hides selected scenery outside the Fortis Colosseum arena. CAN BE BUGGY!",
 		position = 6
 	)
-	default boolean hideColosseumOuterScene()
+	default boolean hideColosseumOuterScene2()
 	{
 		return false;
 	}

@@ -488,9 +488,9 @@ public class TzhaarColoAdditionsPlugin extends Plugin
 		int npcId = npcSpawned.getNpc().getId();
 		if (npcId == NpcID.COLOSSEUM_BOSS_SEATED)
 		{
-			if ((config.hideColosseumPillars() || config.hideColosseumOuterScene()) && !refreshedColosseumScene)
+			if ((config.hideColosseumPillars() || config.hideColosseumOuterScene2()) && !refreshedColosseumScene)
 			{
-				// This is just because there's no "Loading" upon entering, and I only want to do this inside the instance.
+				// This is just because there's no "Loading" upon entering, and I only want to remove stuff inside instance
 				refreshedColosseumScene = true;
 				refreshingColosseumScene = true;
 				reloadScene();
@@ -658,8 +658,8 @@ public class TzhaarColoAdditionsPlugin extends Plugin
 	{
 		return config.hideInfernoPillars() && INFERNO_OBJECTS_TO_HIDE.contains(objectId)
 			|| config.hideColosseumPillars() && isInColosseumRegion() && COLOSSEUM_PILLARS.contains(objectId)
-			|| config.hideInfernoOuterScene() && inInfernoScene && shouldHideInfernoOuterObject(objectId)
-			|| config.hideColosseumOuterScene() && isInColosseumRegion() && COLOSSEUM_OUTER_SCENERY.contains(objectId);
+			|| config.hideInfernoOuterScene2() && inInfernoScene && shouldHideInfernoOuterObject(objectId)
+			|| config.hideColosseumOuterScene2() && isInColosseumRegion() && COLOSSEUM_OUTER_SCENERY.contains(objectId);
 	}
 
 	Set<PillarArea> getPillarAreas()
@@ -738,7 +738,7 @@ public class TzhaarColoAdditionsPlugin extends Plugin
 
 	private boolean shouldHideGraphicsObject(GraphicsObject graphicsObject)
 	{
-		if (!config.hideInfernoOuterScene() || !inInfernoScene || graphicsObject == null)
+		if (!config.hideInfernoOuterScene2() || !inInfernoScene || graphicsObject == null)
 		{
 			return false;
 		}
@@ -768,16 +768,16 @@ public class TzhaarColoAdditionsPlugin extends Plugin
 	{
 		return "hideInfernoPillars".equals(key)
 			|| "hideColosseumPillars".equals(key)
-			|| "hideInfernoOuterScene".equals(key)
-			|| "hideColosseumOuterScene".equals(key);
+			|| "hideInfernoOuterScene2".equals(key)
+			|| "hideColosseumOuterScene2".equals(key);
 	}
 
 	private boolean shouldReloadScene(String key)
 	{
 		return "hideInfernoPillars".equals(key)
 			|| "hideColosseumPillars".equals(key)
-			|| "hideInfernoOuterScene".equals(key)
-			|| "hideColosseumOuterScene".equals(key);
+			|| "hideInfernoOuterScene2".equals(key)
+			|| "hideColosseumOuterScene2".equals(key);
 	}
 
 	private void reloadScene()
