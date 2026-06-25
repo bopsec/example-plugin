@@ -70,7 +70,7 @@ public class RemovePotionStoragePlugin extends Plugin
 
 	private void restoreStoragePopupTab()
 	{
-		Widget storagePopupTab = client.getWidget(InterfaceID.BANKMAIN, InterfaceID.Bankmain.STORAGE_POPUP_TAB);
+		Widget storagePopupTab = client.getWidget(InterfaceID.Bankmain.STORAGE_POPUP_TAB);
 		if (storagePopupTab != null && storagePopupTabWasHidden != null)
 		{
 			storagePopupTab.setHidden(storagePopupTabWasHidden);
