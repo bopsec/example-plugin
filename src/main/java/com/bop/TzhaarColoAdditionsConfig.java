@@ -82,8 +82,8 @@ public interface TzhaarColoAdditionsConfig extends Config
 
 	@ConfigItem(
 		keyName = "hideColosseumOuterScene2",
-		name = "Hide Colosseum scenery",
-		description = "Hides selected scenery outside the Fortis Colosseum arena. CAN BE BUGGY!",
+		name = "[experimental]Hide Colo scenery",
+		description = "Hides (almost) everything outside the colosseum arena.",
 		position = 6
 	)
 	default boolean hideColosseumOuterScene2()
