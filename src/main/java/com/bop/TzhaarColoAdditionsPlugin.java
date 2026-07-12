@@ -163,7 +163,7 @@ public class TzhaarColoAdditionsPlugin extends Plugin
 		if (config.hideColosseumOuterScene2() && (isInColosseumRegion() || isInColosseumBankRegion()))
 		{
 			if ((varbitChanged.getVarbitId() == VarbitID.MINIMAP_STATE && varbitChanged.getValue() == 0)
-				|| (varbitChanged.getVarbitId() == VarbitID.GRAVESTONE_DURATION && varbitChanged.getValue() == 1500))
+				|| (varbitChanged.getVarbitId() == VarbitID.GRAVESTONE_DURATION && varbitChanged.getValue() == 1495))
 				reloadScene();
 		}
 	}
