@@ -21,11 +21,10 @@ import net.runelite.api.events.GameObjectSpawned;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GroundObjectSpawned;
 import net.runelite.api.events.GraphicsObjectCreated;
-import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.events.WallObjectSpawned;
+import net.runelite.api.events.WorldViewLoaded;
 import net.runelite.api.gameval.ObjectID;
 import net.runelite.api.gameval.SpotanimID;
-import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.callback.RenderCallback;
 import net.runelite.client.callback.RenderCallbackManager;
@@ -155,17 +154,44 @@ public class TzhaarColoAdditionsPlugin extends Plugin
 		pillarAreas.clear();
 		infernoPillarAreas.clear();
 		inInfernoScene = false;
+		wasInColosseumRegion = false;
+		wasInColosseumBankRegion = false;
 	}
 
+	private boolean wasInColosseumRegion;
+	private boolean wasInColosseumBankRegion;
+
 	@Subscribe
-	public void onVarbitChanged(VarbitChanged varbitChanged)
+	public void onWorldViewLoaded(WorldViewLoaded event)
 	{
-		if (config.hideColosseumOuterScene2() && (isInColosseumRegion() || isInColosseumBankRegion()))
+		if (!config.hideColosseumOuterScene2())
 		{
-			if ((varbitChanged.getVarbitId() == VarbitID.MINIMAP_STATE && varbitChanged.getValue() == 0)
-				|| (varbitChanged.getVarbitId() == VarbitID.GRAVESTONE_DURATION && varbitChanged.getValue() > 1495))
-				reloadScene();
+			return;
 		}
+
+		if (event.getWorldView() != client.getTopLevelWorldView())
+		{
+			return;
+		}
+
+		clientThread.invokeLater(() ->
+		{
+			boolean inColosseumRegion = isInColosseumRegion();
+			boolean inColosseumBankRegion = isInColosseumBankRegion();
+
+			boolean enteredColosseumRegion = !wasInColosseumRegion && inColosseumRegion;
+			boolean leftColosseumRegion = wasInColosseumRegion && !inColosseumRegion;
+			boolean enteredColosseumBankRegion = !wasInColosseumBankRegion && inColosseumBankRegion;
+
+			wasInColosseumRegion = inColosseumRegion;
+			wasInColosseumBankRegion = inColosseumBankRegion;
+
+			if (enteredColosseumRegion || leftColosseumRegion || enteredColosseumBankRegion)
+			{
+				scanLoadedScene();
+				reloadScene();
+			}
+		});
 	}
 
 	@Subscribe
@@ -177,6 +203,11 @@ public class TzhaarColoAdditionsPlugin extends Plugin
 			pillarAreas.clear();
 			infernoPillarAreas.clear();
 			inInfernoScene = false;
+			if (gameStateChanged.getGameState() == GameState.LOGIN_SCREEN)
+			{
+				wasInColosseumRegion = false;
+				wasInColosseumBankRegion = false;
+			}
 		}
 
 		if (gameStateChanged.getGameState() == GameState.LOGGED_IN)
