@@ -163,7 +163,14 @@ public class HotkeyHideSidepanelsPlugin extends Plugin {
             return;
         }
 		int currentTab = client.getVarcIntValue(VarClientID.TOPLEVEL_PANEL);
-		if (currentTab != -1) { // currentTab being -1 means it is currently closed
+		if (currentTab == -1) { // currentTab being -1 means it is currently closed
+			if (config.closeOnly())
+			{
+				return;
+			}
+		}
+		else
+		{
 			savedTab = currentTab;
 		}
 		// we just run the same cs2 to open and close
