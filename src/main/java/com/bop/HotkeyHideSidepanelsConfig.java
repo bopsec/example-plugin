@@ -29,4 +29,15 @@ public interface HotkeyHideSidepanelsConfig extends Config
 	{
 		return true;
 	}
+
+	@ConfigItem(
+		keyName = "closeOnly",
+		name = "Close Only",
+		description = "Only closes the currently open side panel. Never opens one, so the hotkey stops acting as a toggle.",
+		position = 2
+	)
+	default boolean closeOnly()
+	{
+		return false;
+	}
 }
