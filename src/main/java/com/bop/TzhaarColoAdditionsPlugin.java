@@ -164,7 +164,7 @@ public class TzhaarColoAdditionsPlugin extends Plugin
 	@Subscribe
 	public void onWorldViewLoaded(WorldViewLoaded event)
 	{
-		if (!config.hideColosseumOuterScene2())
+		if (!shouldReloadColosseumSceneOnRegionChange())
 		{
 			return;
 		}
@@ -186,7 +186,9 @@ public class TzhaarColoAdditionsPlugin extends Plugin
 			wasInColosseumRegion = inColosseumRegion;
 			wasInColosseumBankRegion = inColosseumBankRegion;
 
-			if (enteredColosseumRegion || leftColosseumRegion || enteredColosseumBankRegion)
+			if (enteredColosseumRegion
+				|| leftColosseumRegion
+				|| config.hideColosseumOuterScene2() && enteredColosseumBankRegion)
 			{
 				scanLoadedScene();
 				reloadScene();
@@ -607,6 +609,11 @@ public class TzhaarColoAdditionsPlugin extends Plugin
 			|| "hideColosseumPillars".equals(key)
 			|| "hideInfernoOuterScene2".equals(key)
 			|| "hideColosseumOuterScene2".equals(key);
+	}
+
+	private boolean shouldReloadColosseumSceneOnRegionChange()
+	{
+		return config.hideColosseumPillars() || config.hideColosseumOuterScene2();
 	}
 
 	private void reloadScene()
