@@ -265,12 +265,24 @@ public interface NoMisclickRepotConfig extends Config
 		return true;
 	}
 
+	@ConfigItem(
+		keyName = "timerMode",
+		name = "Timer mode",
+		description = "Choose what the overlay timer displays",
+		position = 32,
+		section = overlaySection
+	)
+	default TimerMode timerMode()
+	{
+		return TimerMode.REPOT_TIME;
+	}
+
 	@Alpha
 	@ConfigItem(
 		keyName = "blockedOverlayColor",
 		name = "Overlay colour",
 		description = "Colour used for blocked potion item overlays",
-		position = 32,
+		position = 33,
 		section = overlaySection
 	)
 	default Color blockedOverlayColor()
@@ -282,11 +294,17 @@ public interface NoMisclickRepotConfig extends Config
 		keyName = "timerTextSize",
 		name = "Timer text size",
 		description = "Text size for the repot timer",
-		position = 33,
+		position = 34,
 		section = overlaySection
 	)
 	default int timerTextSize()
 	{
 		return 14;
+	}
+
+	enum TimerMode
+	{
+		REPOT_TIME,
+		EFFECT_TIME
 	}
 }

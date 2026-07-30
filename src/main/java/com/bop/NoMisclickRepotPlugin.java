@@ -448,7 +448,7 @@ public class NoMisclickRepotPlugin extends Plugin
 	{
 		if (isActiveDivine(itemId))
 		{
-			return new PotionOverlayState(getPotionGroup(itemId), ticksUntilAllowed(getDivineRemainingTicks(itemId)), getPotionDose(itemId));
+			return createTimedOverlayState(getPotionGroup(itemId), getDivineRemainingTicks(itemId), getPotionDose(itemId));
 		}
 
 		if (isActiveNonTimedPotion(itemId))
@@ -458,23 +458,23 @@ public class NoMisclickRepotPlugin extends Plugin
 
 		if (isActivePrayerRegen(itemId))
 		{
-			return new PotionOverlayState(PotionGroup.PRAYER_REGEN, ticksUntilAllowed(getCachedRemainingTicks(prayerRegen, () -> client.getVarbitValue(prayerRegen) * 12)), getPotionDose(itemId));
+			return createTimedOverlayState(PotionGroup.PRAYER_REGEN, getCachedRemainingTicks(prayerRegen, () -> client.getVarbitValue(prayerRegen) * 12), getPotionDose(itemId));
 		}
 
 		if (isActiveGoading(itemId))
 		{
-			return new PotionOverlayState(PotionGroup.GOADING, ticksUntilAllowed(getCachedRemainingTicks(goading, () -> client.getVarbitValue(goading) * 6)), getPotionDose(itemId));
+			return createTimedOverlayState(PotionGroup.GOADING, getCachedRemainingTicks(goading, () -> client.getVarbitValue(goading) * 6), getPotionDose(itemId));
 		}
 
 		if (isActiveAntifire(itemId))
 		{
-			return new PotionOverlayState(getPotionGroup(itemId), ticksUntilAllowed(getAntifireRemainingTicks(itemId)), getPotionDose(itemId));
+			return createTimedOverlayState(getPotionGroup(itemId), getAntifireRemainingTicks(itemId), getPotionDose(itemId));
 		}
 
 		if (isProtectedAntipoison(itemId))
 		{
 			int remainingTicks = getPoisonProtectionRemainingTicks(itemId);
-			return new PotionOverlayState(getPotionGroup(itemId), ticksUntilAllowed(remainingTicks), getPotionDose(itemId));
+			return createTimedOverlayState(getPotionGroup(itemId), remainingTicks, getPotionDose(itemId));
 		}
 
 		if (config.coxOverload() && isActiveCoxOverload(itemId))
@@ -484,17 +484,118 @@ public class NoMisclickRepotPlugin extends Plugin
 
 		if (config.coxEnhance() && isActiveCoxPrayerEnhanceEffect(itemId))
 		{
-			return new PotionOverlayState(PotionGroup.COX_ENHANCE, ticksUntilAllowed(getCachedRemainingTicks(coxEnhance, this::getLiveCoxEnhanceRemainingTicks)), getPotionDose(itemId));
+			return createTimedOverlayState(PotionGroup.COX_ENHANCE, getCachedRemainingTicks(coxEnhance, this::getLiveCoxEnhanceRemainingTicks), getPotionDose(itemId));
 		}
 
 		if (config.toaSalt() && isActiveToaSaltEffect(itemId))
 		{
-			return new PotionOverlayState(PotionGroup.TOA_SALT, ticksUntilAllowed(getCachedRemainingTicks(toaOverload, () -> client.getVarbitValue(toaOverload) * 25)), getPotionDose(itemId));
+			return createTimedOverlayState(PotionGroup.TOA_SALT, getCachedRemainingTicks(toaOverload, () -> client.getVarbitValue(toaOverload) * 25), getPotionDose(itemId));
 		}
 
 		if (config.toaLiquidAdren() && isActiveToaLiquidAdrenalineEffect(itemId))
 		{
-			return new PotionOverlayState(PotionGroup.TOA_LIQUID_ADRENALINE, ticksUntilAllowed(getCachedRemainingTicks(toaLiquidAdrenaline, this::getLiveToaLiquidAdrenalineRemainingTicks)), getPotionDose(itemId));
+			return createTimedOverlayState(PotionGroup.TOA_LIQUID_ADRENALINE, getCachedRemainingTicks(toaLiquidAdrenaline, this::getLiveToaLiquidAdrenalineRemainingTicks), getPotionDose(itemId));
+		}
+
+		return null;
+	}
+
+	private PotionOverlayState createTimedOverlayState(PotionGroup group, int remainingEffectTicks, int dose)
+	{
+		return new PotionOverlayState(group, ticksUntilAllowed(remainingEffectTicks), remainingEffectTicks, dose);
+	}
+
+	PotionOverlayState getPotionTimerState(int itemId)
+	{
+		if (config.timerMode() == NoMisclickRepotConfig.TimerMode.REPOT_TIME)
+		{
+			return getPotionOverlayState(itemId);
+		}
+
+		return getPotionEffectTimerState(itemId);
+	}
+
+	private PotionOverlayState getPotionEffectTimerState(int itemId)
+	{
+		if (config.divines())
+		{
+			int remainingTicks = getDivineEffectRemainingTicks(itemId);
+			if (remainingTicks > 0)
+			{
+				return createTimedOverlayState(getPotionGroup(itemId), remainingTicks, getPotionDose(itemId));
+			}
+		}
+
+		if (config.prayerRegen() && prayerRegenPots.contains(itemId))
+		{
+			int remainingTicks = getCachedRemainingTicks(prayerRegen, () -> client.getVarbitValue(prayerRegen) * 12);
+			if (remainingTicks > 0)
+			{
+				return createTimedOverlayState(PotionGroup.PRAYER_REGEN, remainingTicks, getPotionDose(itemId));
+			}
+		}
+
+		if (config.goading() && goadingPots.contains(itemId))
+		{
+			int remainingTicks = getCachedRemainingTicks(goading, () -> client.getVarbitValue(goading) * 6);
+			if (remainingTicks > 0)
+			{
+				return createTimedOverlayState(PotionGroup.GOADING, remainingTicks, getPotionDose(itemId));
+			}
+		}
+
+		if (config.antifire())
+		{
+			int remainingTicks = getAntifireRemainingTicks(itemId);
+			if (remainingTicks > 0)
+			{
+				return createTimedOverlayState(getPotionGroup(itemId), remainingTicks, getPotionDose(itemId));
+			}
+		}
+
+		if (config.antipoison() && client.getVarpValue(anti) <= 0)
+		{
+			int remainingTicks = getPoisonProtectionRemainingTicks(itemId);
+			if (remainingTicks > 0)
+			{
+				return createTimedOverlayState(getPotionGroup(itemId), remainingTicks, getPotionDose(itemId));
+			}
+		}
+
+		if (config.coxOverload() && coxOverloadPots.contains(itemId))
+		{
+			int remainingTicks = getCachedRemainingTicks(coxOverload, () -> client.getVarbitValue(coxOverload) * 25);
+			if (remainingTicks > 0)
+			{
+				return createTimedOverlayState(PotionGroup.COX_OVERLOAD, remainingTicks, getPotionDose(itemId));
+			}
+		}
+
+		if (config.coxEnhance() && coxEnhancePots.contains(itemId))
+		{
+			int remainingTicks = getCachedRemainingTicks(coxEnhance, this::getLiveCoxEnhanceRemainingTicks);
+			if (remainingTicks > 0)
+			{
+				return createTimedOverlayState(PotionGroup.COX_ENHANCE, remainingTicks, getPotionDose(itemId));
+			}
+		}
+
+		if (config.toaSalt() && toaOverloadPots.contains(itemId))
+		{
+			int remainingTicks = getCachedRemainingTicks(toaOverload, () -> client.getVarbitValue(toaOverload) * 25);
+			if (remainingTicks > 0)
+			{
+				return createTimedOverlayState(PotionGroup.TOA_SALT, remainingTicks, getPotionDose(itemId));
+			}
+		}
+
+		if (config.toaLiquidAdren() && toaLiquidAdrenalinePots.contains(itemId))
+		{
+			int remainingTicks = getCachedRemainingTicks(toaLiquidAdrenaline, this::getLiveToaLiquidAdrenalineRemainingTicks);
+			if (remainingTicks > 0)
+			{
+				return createTimedOverlayState(PotionGroup.TOA_LIQUID_ADRENALINE, remainingTicks, getPotionDose(itemId));
+			}
 		}
 
 		return null;
@@ -513,7 +614,7 @@ public class NoMisclickRepotPlugin extends Plugin
 		Item[] items = inventory.getItems();
 		for (int i = 0; i < items.length; i++)
 		{
-			PotionOverlayState itemState = getPotionOverlayState(items[i].getId());
+			PotionOverlayState itemState = getPotionTimerState(items[i].getId());
 			if (itemState == null || itemState.group != state.group)
 			{
 				continue;
@@ -556,6 +657,33 @@ public class NoMisclickRepotPlugin extends Plugin
 		}
 
 		if (divineScbPots.contains(itemId) && isScbBoostAboveThreshold())
+		{
+			remainingTicks = Math.max(remainingTicks, getCachedRemainingTicks(divineScb));
+		}
+
+		if (divineStrPots.contains(itemId))
+		{
+			remainingTicks = Math.max(remainingTicks, getCachedRemainingTicks(divineStr));
+		}
+
+		if (divineAtkPots.contains(itemId))
+		{
+			remainingTicks = Math.max(remainingTicks, getCachedRemainingTicks(divineAtk));
+		}
+
+		return remainingTicks;
+	}
+
+	private int getDivineEffectRemainingTicks(int itemId)
+	{
+		int remainingTicks = 0;
+		if (rangingPotionPots.contains(itemId))
+		{
+			remainingTicks = Math.max(remainingTicks, getCachedRemainingTicks(divineBastion));
+			remainingTicks = Math.max(remainingTicks, getCachedRemainingTicks(divineRanging));
+		}
+
+		if (divineScbPots.contains(itemId))
 		{
 			remainingTicks = Math.max(remainingTicks, getCachedRemainingTicks(divineScb));
 		}
@@ -737,18 +865,30 @@ public class NoMisclickRepotPlugin extends Plugin
 	{
 		final PotionGroup group;
 		final int ticksUntilAllowed;
+		final int remainingEffectTicks;
 		final int dose;
 		final boolean showTimer;
 
 		PotionOverlayState(PotionGroup group, int ticksUntilAllowed, int dose)
 		{
-			this(group, ticksUntilAllowed, dose, true);
+			this(group, ticksUntilAllowed, ticksUntilAllowed, dose, true);
 		}
 
 		PotionOverlayState(PotionGroup group, int ticksUntilAllowed, int dose, boolean showTimer)
 		{
+			this(group, ticksUntilAllowed, ticksUntilAllowed, dose, showTimer);
+		}
+
+		PotionOverlayState(PotionGroup group, int ticksUntilAllowed, int remainingEffectTicks, int dose)
+		{
+			this(group, ticksUntilAllowed, remainingEffectTicks, dose, true);
+		}
+
+		PotionOverlayState(PotionGroup group, int ticksUntilAllowed, int remainingEffectTicks, int dose, boolean showTimer)
+		{
 			this.group = group;
 			this.ticksUntilAllowed = ticksUntilAllowed;
+			this.remainingEffectTicks = remainingEffectTicks;
 			this.dose = dose;
 			this.showTimer = showTimer;
 		}

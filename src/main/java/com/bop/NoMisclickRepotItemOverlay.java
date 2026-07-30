@@ -33,14 +33,15 @@ public class NoMisclickRepotItemOverlay extends WidgetItemOverlay
 			return;
 		}
 
-		NoMisclickRepotPlugin.PotionOverlayState state = plugin.getPotionOverlayState(itemId);
-		if (state == null)
+		NoMisclickRepotPlugin.PotionOverlayState blockedState = plugin.getPotionOverlayState(itemId);
+		NoMisclickRepotPlugin.PotionOverlayState timerState = plugin.getPotionTimerState(itemId);
+		if (blockedState == null && timerState == null)
 		{
 			return;
 		}
 
 		Rectangle bounds = item.getCanvasBounds();
-		if (config.blockedOverlay())
+		if (config.blockedOverlay() && blockedState != null)
 		{
 			Color overlayColor = config.blockedOverlayColor();
 			graphics.setColor(overlayColor);
@@ -49,10 +50,17 @@ public class NoMisclickRepotItemOverlay extends WidgetItemOverlay
 			graphics.draw(bounds);
 		}
 
-		if (config.repotTimer() && state.showTimer && plugin.shouldShowTimer(item.getWidget().getIndex(), state))
+		if (config.repotTimer() && timerState != null && timerState.showTimer && plugin.shouldShowTimer(item.getWidget().getIndex(), timerState))
 		{
-			renderTimer(graphics, bounds, state.ticksUntilAllowed);
+			renderTimer(graphics, bounds, getTimerTicks(timerState));
 		}
+	}
+
+	private int getTimerTicks(NoMisclickRepotPlugin.PotionOverlayState state)
+	{
+		return config.timerMode() == NoMisclickRepotConfig.TimerMode.EFFECT_TIME
+			? state.remainingEffectTicks
+			: state.ticksUntilAllowed;
 	}
 
 	private void renderTimer(Graphics2D graphics, Rectangle bounds, int ticks)
