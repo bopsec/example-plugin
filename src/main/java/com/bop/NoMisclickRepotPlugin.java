@@ -425,7 +425,8 @@ public class NoMisclickRepotPlugin extends Plugin
 
 	private boolean isScbBoostAboveThreshold()
 	{
-		return client.getBoostedSkillLevel(Skill.STRENGTH) > config.scbBoostThreshold();
+		return client.getBoostedSkillLevel(Skill.STRENGTH) > config.scbBoostThreshold()
+			&& isSuperCombatAttackBoostAboveThreshold();
 	}
 
 	private boolean isRegularRangeBoostAboveThreshold()
@@ -435,7 +436,14 @@ public class NoMisclickRepotPlugin extends Plugin
 
 	private boolean isRegularSuperCombatBoostAboveThreshold()
 	{
-		return client.getBoostedSkillLevel(Skill.STRENGTH) > config.superCombatPotionBoostThreshold();
+		return client.getBoostedSkillLevel(Skill.STRENGTH) > config.superCombatPotionBoostThreshold()
+			&& isSuperCombatAttackBoostAboveThreshold();
+	}
+
+	private boolean isSuperCombatAttackBoostAboveThreshold()
+	{
+		return !config.superCombatAttackCheck()
+			|| client.getBoostedSkillLevel(Skill.ATTACK) > config.superCombatAttackBoostThreshold();
 	}
 
 	private boolean isBelowDivineHpBypassThreshold()

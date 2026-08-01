@@ -86,6 +86,30 @@ public interface NoMisclickRepotConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "superCombatAttackCheck",
+		name = "Check scb Attack",
+		description = "Also require Attack to be above its threshold before blocking super combat potions",
+		position = 4,
+		section = potionsSection
+	)
+	default boolean superCombatAttackCheck()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = "superCombatAttackBoostThreshold",
+		name = "Scb Attack threshold",
+		description = "Block super combat potions only while Attack is above this value, when Attack checking is enabled",
+		position = 5,
+		section = potionsSection
+	)
+	default int superCombatAttackBoostThreshold()
+	{
+		return 114;
+	}
+
+	@ConfigItem(
 		keyName = "divineHpBypassThreshold",
 		name = "Divine HP bypass",
 		description = "Allow divine repotting when current Hitpoints is below this value. Set to 0 to disable.",
