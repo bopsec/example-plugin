@@ -24,5 +24,10 @@ public class NoFadeout extends Plugin
 			event.getScriptEvent().getArguments()[4] = 255; // transparency
 			event.getScriptEvent().getArguments()[5] = 0; // "fadeout" duration
 		}
+		if (event.getScriptId() == 952) {
+			event.getScriptEvent().getArguments()[1] = client.getTickCount();
+			// Script is client.getTickCount() - getArgs[1], to find the duration
+			// This sets duration to 0
+		}
 	}
 }
