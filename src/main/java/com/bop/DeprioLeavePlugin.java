@@ -36,6 +36,8 @@ public class DeprioLeavePlugin extends Plugin
 
 	private List<Pattern> deprioOptionPatterns = List.of();
 	private List<Pattern> deprioItemPatterns = List.of();
+	private Set<Integer> npcIds = Set.of();
+	private List<Pattern> npcNamePatterns = List.of();
 
 	private final Map<WorldPoint, Map<Integer, Integer>> groundItems = new HashMap<>();
 
@@ -45,11 +47,6 @@ public class DeprioLeavePlugin extends Plugin
 	protected void startUp() throws Exception
 	{
 		reloadWhitelist();
-	}
-
-	@Override
-	protected void shutDown() throws Exception
-	{
 	}
 
 	@Subscribe
@@ -79,7 +76,10 @@ public class DeprioLeavePlugin extends Plugin
 	@Subscribe(priority = -1)
 	public void onPostMenuSort(PostMenuSort e)
 	{
-		if (!lootExists() || !client.getTopLevelWorldView().isInstance())
+		if (!client.getTopLevelWorldView().isInstance())
+			return;
+
+		if (!lootExists() && !npcExists())
 			return;
 
 		MenuEntry[] entries = client.getMenuEntries();
@@ -139,6 +139,30 @@ public class DeprioLeavePlugin extends Plugin
 					return true;
 			}
 		}
+		return false;
+	}
+
+	private boolean npcExists()
+	{
+		if (npcIds.isEmpty() && npcNamePatterns.isEmpty())
+			return false;
+
+		for (NPC npc : client.getTopLevelWorldView().npcs())
+		{
+			if (npcIds.contains(npc.getId()))
+				return true;
+
+			String name = npc.getName();
+			if (name != null)
+			{
+				for (Pattern pattern : npcNamePatterns)
+				{
+					if (pattern.matcher(name.toLowerCase()).matches())
+						return true;
+				}
+			}
+		}
+
 		return false;
 	}
 
@@ -211,12 +235,6 @@ public class DeprioLeavePlugin extends Plugin
 		}
 	}
 
-	private boolean isWidgetItemEntry(MenuEntry e)
-	{
-		MenuAction t = e.getType();
-		return t == MenuAction.CC_OP || t == MenuAction.CC_OP_LOW_PRIORITY;
-	}
-
 	private boolean isWhitelisted(int itemId)
 	{
 		String name = itemManager.getItemComposition(itemId).getName().toLowerCase();
@@ -261,7 +279,34 @@ public class DeprioLeavePlugin extends Plugin
 				.map(String::toLowerCase)
 				.map(this::wildcardToRegex)
 				.map(Pattern::compile)
+			.collect(Collectors.toList());
+
+		npcIds = Arrays.stream(config.npcIds().split(","))
+				.map(String::trim)
+				.filter(s -> !s.isEmpty())
+				.map(this::parseNpcId)
+				.filter(Objects::nonNull)
+				.collect(Collectors.toSet());
+
+		npcNamePatterns = Arrays.stream(config.npcNames().split(","))
+				.map(String::trim)
+				.filter(s -> !s.isEmpty())
+				.map(this::wildcardToRegex)
+				.map(Pattern::compile)
 				.collect(Collectors.toList());
+	}
+
+	private Integer parseNpcId(String value)
+	{
+		try
+		{
+			return Integer.valueOf(value);
+		}
+		catch (NumberFormatException ex)
+		{
+			log.debug("Ignoring invalid NPC ID: {}", value);
+			return null;
+		}
 	}
 
 	private String wildcardToRegex(String s)

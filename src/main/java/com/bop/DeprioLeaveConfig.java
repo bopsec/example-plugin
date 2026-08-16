@@ -22,6 +22,20 @@ public interface DeprioLeaveConfig extends Config
 	)
 	default String whitelist() { return "*(elite), *(hard), *(master), Twisted bow"; }
 	@ConfigItem(
+			keyName = "npcIds",
+			name = "NPC IDs",
+			description = "Comma separated NPC IDs that trigger deprioritization",
+			position = 2
+	)
+	default String npcIds() { return ""; }
+	@ConfigItem(
+			keyName = "npcNames",
+			name = "NPC names",
+			description = "Comma separated NPC names that trigger deprioritization (supports * wildcards)",
+			position = 3
+	)
+	default String npcNames() { return ""; }
+	@ConfigItem(
 			keyName = "deprioOptions",
 			name = "Deprioritized object options",
 			description = "Comma separated list of menu options to deprioritize (supports * wildcards)",

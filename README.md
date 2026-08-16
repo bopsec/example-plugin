@@ -8,6 +8,8 @@ If you want something new added or want to contact me, go to [my discord server]
 Add any items you would like to whitelist to the Whitelist, or set the Value Over to whatever value you wouldn't want to leave on the ground.\
 The whitelist supports wildcards, so for example "Jar of*" will include every boss jar, and *(elite) will include Clue scroll (elite) and Scroll box (elite).
 
+You can also configure NPC IDs or names as an alternate trigger. If a matching NPC is present in the current instance, the configured object and widget options are deprioritized even when no qualifying loot is on the ground. NPC names support the same `*` wildcards.
+
 ## Deprioritzed object options
 For deprioritized object options, add the option that shows when you hover over the leave option. Eg for the Leviathan boat it would be "Travel", for the nightmare barrier, it would be "Pass-through".\
 Quick-exit, exit, quick-leave and leave are all added as examples. I might add more to the default config later.
